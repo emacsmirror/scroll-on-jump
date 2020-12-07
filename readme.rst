@@ -109,6 +109,33 @@ After:
    (global-set-key (kbd "<f12>")
      (lambda () (interactive) (scroll-on-jump (my-function))))
 
+
+Complete Example
+----------------
+
+Here is a more complete example for evil-mode users.
+
+.. code-block:: elisp
+
+   (with-eval-after-load 'evil
+     (scroll-on-jump-advice-add evil-undo)
+     (scroll-on-jump-advice-add evil-redo)
+     (scroll-on-jump-advice-add evil-jump-item)
+     (scroll-on-jump-advice-add evil-jump-forward)
+     (scroll-on-jump-advice-add evil-jump-backward)
+     (scroll-on-jump-advice-add evil-ex-search-next)
+     (scroll-on-jump-advice-add evil-ex-search-previous)
+     (scroll-on-jump-advice-add evil-forward-paragraph)
+     (scroll-on-jump-advice-add evil-backward-paragraph))
+
+   (with-eval-after-load 'goto-chg
+     (scroll-on-jump-advice-add goto-last-change)
+     (scroll-on-jump-advice-add goto-last-change-reverse))
+
+   (global-set-key (kbd "<C-M-next>") (scroll-on-jump-interactive 'diff-hl-next-hunk))
+   (global-set-key (kbd "<C-M-prior>") (scroll-on-jump-interactive 'diff-hl-previous-hunk)))
+
+
 Customization
 =============
 
