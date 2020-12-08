@@ -250,6 +250,14 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
           (px-done-abs 0)
           (px-scroll-abs (abs (* lines-scroll char-height)))
           (px-scroll (* lines-scroll char-height)))
+
+        ;; Workaround for situations when the `point' starts at the window bounds.
+        ;; If this happens we can't do any sub-pixel scrolling as the `point' locks scrolling.
+        ;; This is only needed for pixel level scrolling.
+        ;;
+        ;; We can move arbitrary lines here since the final point is set at the very end.
+        (forward-line dir)
+
         (while-no-input
           (while (< px-done-abs px-scroll-abs)
             ;; Inhibit quit in all of this logic except re-display.
