@@ -380,7 +380,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 (defmacro scroll-on-jump (&rest body)
   "Main macro that wraps BODY in logic that reacts to change in `point'."
   `
-  (let*
+  (let
     ( ;; Set in case we have an error.
       (err-value nil)
       (buf (current-buffer))
