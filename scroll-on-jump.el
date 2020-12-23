@@ -401,12 +401,17 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
     (prog1
       (save-excursion
-        (condition-case err
+        ;; Note, we could catch and re-raise errors,
+        ;; this has the advantage that we could get the resulting cursor location
+        ;; even in the case of an error.
+        ;; However - this makes troubleshooting problems considerably more difficult.
+        ;; As it wont show the full back-trace, only the error message.
+        ;; So don't prioritize correct jumping in the case of errors and assume errors
+        ;; are not something that happen after cursor motion.
+        (prog1
           (progn
             ,@body)
-          ;; Re-raise below, after handing cursor motion.
-          (error (setq err-value err)))
-        (setq point-next (point)))
+          (setq point-next (point))))
 
       (when (and (eq buf (current-buffer)) (eq window (selected-window)))
         (setq has-context-changed nil))
