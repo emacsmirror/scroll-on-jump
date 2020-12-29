@@ -317,8 +317,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 (defun scroll-on-jump-auto-center (window point-prev point-next)
   "Re-frame WINDOW from POINT-PREV to POINT-NEXT, optionally animating."
   ;; Count lines, excluding the current line.
-
-  (let ((lines (1- (count-screen-lines point-prev point-next t))))
+  (let ((lines (1- (count-screen-lines point-prev point-next t window))))
     (when (> lines 0)
       (let
         (
@@ -332,7 +331,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
         (if (eq dir 1)
           (let*
             (
-              (window-lines-prev (count-screen-lines (window-start window) point-prev t))
+              (window-lines-prev (count-screen-lines (window-start window) point-prev t window))
               (window-lines-next (+ window-lines-prev lines))
               (lines-limit (max (/ height 2) window-lines-prev)))
             (when (>= window-lines-next lines-limit)
@@ -351,7 +350,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
             ( ;; Note that we can't use `window-end' here as we may
               ;; be scrolled past the screen end-point.
               (window-lines-prev
-                (- height (count-screen-lines (window-start window) point-prev t)))
+                (- height (count-screen-lines (window-start window) point-prev t window)))
               (window-lines-next (+ window-lines-prev lines))
               (lines-limit (max (/ height 2) window-lines-prev)))
             (when (>= window-lines-next lines-limit)
