@@ -390,7 +390,6 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   `
   (let
     ( ;; Set in case we have an error.
-      (err-value nil)
       (buf (current-buffer))
       (window (selected-window))
 
@@ -413,20 +412,20 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
             ,@body)
           (setq point-next (point))))
 
-      (when (and (eq buf (current-buffer)) (eq window (selected-window)))
+      (when
+        (and
+          (eq buf (current-buffer))
+          (eq window (selected-window))
+          (eq buf (window-buffer window)))
         (setq has-context-changed nil))
 
       (cond
         (has-context-changed
           ;; Context changed, use a fallback.
-          (goto-char (point)))
+          (goto-char point-next))
         (t
           ;; Calculate the new window start.
-          (scroll-on-jump-auto-center window point-prev point-next)))
-
-      (when err-value
-        ;; Re-raise the error.
-        (signal (car err-value) (cdr err-value))))))
+          (scroll-on-jump-auto-center window point-prev point-next))))))
 
 ;;;###autoload
 (defmacro scroll-on-jump-interactive (fn)
