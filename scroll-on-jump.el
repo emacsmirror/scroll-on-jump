@@ -159,7 +159,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   "Non animated scroll for WINDOW to move LINES-SCROLL."
   (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))
 
-(defun scroll-on-jump--animated-scroll-by-line (window lines-scroll dir)
+(defun scroll-on-jump--animated-scroll-by-line (window lines-scroll dir also-move-point)
   "Animated scroll WINDOW LINES-SCROLL lines along DIR direction."
   (let
     (
@@ -210,7 +210,9 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
               ;; Faster alternative to scroll.
               (scroll-on-jump--scroll-by-lines-simple window step nil)
-              (forward-line step)
+
+              (when also-move-point
+                (forward-line step))
 
               (setq lines-scroll (- lines-scroll step)))
 
@@ -231,7 +233,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
   (run-window-scroll-functions window))
 
-(defun scroll-on-jump--animated-scroll-by-px (window lines-scroll dir)
+(defun scroll-on-jump--animated-scroll-by-px (window lines-scroll dir also-move-point)
   "Animated scroll WINDOW LINES-SCROLL lines along DIR direction."
   (let
     (
@@ -260,7 +262,8 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
         ;; This is only needed for pixel level scrolling.
         ;;
         ;; We can move arbitrary lines here since the final point is set at the very end.
-        (forward-line dir)
+        (when also-move-point
+          (forward-line dir))
 
         (while-no-input
           (while (< px-done-abs px-scroll-abs)
@@ -296,7 +299,8 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
                 ;; Forward lines separately since we might be at end of the buffer
                 ;; and we want to be able to scroll - even if the point has reached it's limit.
-                (forward-line lines-handled)
+                (when also-move-point
+                  (forward-line lines-handled))
 
                 (setq lines-scroll (- lines-scroll lines-handled)))
 
@@ -328,17 +332,17 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
   (run-window-scroll-functions window))
 
-(defun scroll-on-jump--scroll-impl (window lines-scroll dir)
+(defun scroll-on-jump--scroll-impl (window lines-scroll dir also-move-point)
   (cond
     ;; No animation.
     ((zerop scroll-on-jump-duration)
       (scroll-on-jump--immediate-scroll window lines-scroll dir))
     ;; Use pixel scrolling.
     ((and scroll-on-jump-smooth (display-graphic-p))
-      (scroll-on-jump--animated-scroll-by-px window lines-scroll dir))
+      (scroll-on-jump--animated-scroll-by-px window lines-scroll dir also-move-point))
     ;; Use line scrolling.
     (t
-      (scroll-on-jump--animated-scroll-by-line window lines-scroll dir))))
+      (scroll-on-jump--animated-scroll-by-line window lines-scroll dir also-move-point))))
 
 (defun scroll-on-jump-auto-center (window point-prev point-next)
   "Re-frame WINDOW from POINT-PREV to POINT-NEXT, optionally animating."
@@ -393,7 +397,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
                     (goto-char (window-start window))
                     (forward-line lines-scroll)))))))
 
-        (scroll-on-jump--scroll-impl window lines-scroll dir))))
+        (scroll-on-jump--scroll-impl window lines-scroll dir (not (eq (point) point-next))))))
 
   (goto-char point-next))
 
