@@ -313,6 +313,17 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
   (run-window-scroll-functions window))
 
+(defun scroll-on-jump--scroll-impl (window lines-scroll dir)
+  (cond
+    ;; No animation.
+    ((zerop scroll-on-jump-duration)
+      (scroll-on-jump--immediate-scroll window lines-scroll dir))
+    ;; Use pixel scrolling.
+    ((and scroll-on-jump-smooth (display-graphic-p))
+      (scroll-on-jump--animated-scroll-by-px window lines-scroll dir))
+    ;; Use line scrolling.
+    (t
+      (scroll-on-jump--animated-scroll-by-line window lines-scroll dir))))
 
 (defun scroll-on-jump-auto-center (window point-prev point-next)
   "Re-frame WINDOW from POINT-PREV to POINT-NEXT, optionally animating."
@@ -367,16 +378,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
                     (goto-char (window-start window))
                     (forward-line lines-scroll)))))))
 
-        (cond
-          ;; No animation.
-          ((zerop scroll-on-jump-duration)
-            (scroll-on-jump--immediate-scroll window lines-scroll dir))
-          ;; Use pixel scrolling.
-          ((and scroll-on-jump-smooth (display-graphic-p))
-            (scroll-on-jump--animated-scroll-by-px window lines-scroll dir))
-          ;; Use line scrolling.
-          (t
-            (scroll-on-jump--animated-scroll-by-line window lines-scroll dir))))))
+        (scroll-on-jump--scroll-impl window lines-scroll dir))))
 
   (goto-char point-next))
 
