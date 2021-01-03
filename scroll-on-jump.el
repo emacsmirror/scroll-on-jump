@@ -160,7 +160,8 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))
 
 (defun scroll-on-jump--animated-scroll-by-line (window lines-scroll dir also-move-point)
-  "Animated scroll WINDOW LINES-SCROLL lines along DIR direction."
+  "Animated scroll WINDOW LINES-SCROLL lines along DIR direction.
+Moving the point when ALSO-MOVE-POINT is set."
   (let
     (
       (time-init (current-time))
@@ -234,7 +235,8 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   (run-window-scroll-functions window))
 
 (defun scroll-on-jump--animated-scroll-by-px (window lines-scroll dir also-move-point)
-  "Animated scroll WINDOW LINES-SCROLL lines along DIR direction."
+  "Animated scroll WINDOW LINES-SCROLL lines along DIR direction.
+Argument ALSO-MOVE-POINT moves the point while scrolling."
   (let
     (
       (time-init (current-time))
@@ -333,6 +335,9 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   (run-window-scroll-functions window))
 
 (defun scroll-on-jump--scroll-impl (window lines-scroll dir also-move-point)
+  "Scroll WINDOW LINES-SCROLL lines along DIR direction.
+Moving the point when ALSO-MOVE-POINT is set."
+
   (cond
     ;; No animation.
     ((zerop scroll-on-jump-duration)
@@ -403,7 +408,8 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   (goto-char point-next))
 
 (defmacro scroll-on-jump--impl (use-window-start &rest body)
-  "Main macro that wraps BODY in logic that reacts to change in `point'."
+  "Main macro that wraps BODY in logic that reacts to change in `point'.
+Argument USE-WINDOW-START detects window scrolling when non-nil."
   `
   (let
     ( ;; Set in case we have an error.
@@ -477,7 +483,9 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 ;; Use for wrapping functions that set the point.
 
 ;;;###autoload
-(defmacro scroll-on-jump (&rest body) `(scroll-on-jump--impl nil ,@body))
+(defmacro scroll-on-jump (&rest body)
+  "Main macro that wraps BODY in logic that reacts to change in `point'."
+  `(scroll-on-jump--impl nil ,@body))
 
 ;;;###autoload
 (defmacro scroll-on-jump-interactive (fn)
@@ -508,7 +516,9 @@ without changing behavior anywhere else."
 ;; Use when wrapping actions that themselves scroll.
 
 ;;;###autoload
-(defmacro scroll-on-jump-with-scroll (&rest body) `(scroll-on-jump--impl t ,@body))
+(defmacro scroll-on-jump-with-scroll (&rest body)
+  "Main macro that wraps BODY in logic that reacts to change in `point' and vertical scroll."
+  `(scroll-on-jump--impl t ,@body))
 
 ;;;###autoload
 (defmacro scroll-on-jump-with-scroll-interactive (fn)
