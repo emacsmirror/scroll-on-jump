@@ -401,11 +401,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
   (goto-char point-next))
 
-;; ---------------------------------------------------------------------------
-;; Public Functions
-
-;;;###autoload
-(defmacro scroll-on-jump (&rest body)
+(defmacro scroll-on-jump--impl (use-window-start &rest body)
   "Main macro that wraps BODY in logic that reacts to change in `point'."
   `
   (let
@@ -414,7 +410,13 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
       (window (selected-window))
 
       (point-prev (point))
-      (point-next nil))
+      (point-next nil)
+
+      (window-start-prev nil)
+      (window-start-next nil))
+
+    (when ,use-window-start
+      (setq window-start-prev (window-start window)))
 
     (prog1
       (save-excursion
@@ -431,19 +433,53 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
           (setq point-next (point))))
 
       (cond
-        ( ;; Perform animated scroll.
-          (and
-            ;; Buffer/Context changed.
-            (eq buf (window-buffer window)) (eq buf (current-buffer)) (eq window (selected-window))
+        ( ;; Context changed or recursed, simply jump.
+          (not
+            (and
+              ;; Buffer/Context changed.
+              (eq buf (window-buffer window))
+              (eq buf (current-buffer))
+              (eq window (selected-window))
 
-            ;; Disallow recursion.
-            (not (boundp 'scroll-on-jump--resurse)))
+              ;; Disallow recursion.
+              (not (boundp 'scroll-on-jump--resurse))))
 
+          (goto-char point-next))
+
+        (t ;; Perform animated scroll.
           (let ((scroll-on-jump--resurse t))
-            (scroll-on-jump-auto-center window point-prev point-next)))
+            (if window-start-prev
+              (progn
+                (setq window-start-next (window-start window))
+                (unless (eq window-start-prev window-start-next)
+                  (set-window-start window window-start-prev)
+                  (let
+                    (
+                      (lines-scroll
+                        (1- (count-screen-lines window-start-prev window-start-next t window)))
+                      (dir
+                        (if (< window-start-prev window-start-next)
+                          1
+                          -1)))
+                    (scroll-on-jump--scroll-impl
+                      window
+                      (* dir lines-scroll)
+                      dir
+                      (not (eq (point) point-next)))))
+                (goto-char point-next))
+              (scroll-on-jump-auto-center window point-prev point-next))))))))
 
-        (t ;; Context changed or recursed, simply jump.
-          (goto-char point-next))))))
+
+;; ---------------------------------------------------------------------------
+;; Public Functions
+
+;; ----------------
+;; Default Behavior
+;;
+;; Use for wrapping functions that set the point.
+
+;;;###autoload
+(defmacro scroll-on-jump (&rest body) `(scroll-on-jump--impl nil ,@body))
 
 ;;;###autoload
 (defmacro scroll-on-jump-interactive (fn)
@@ -467,6 +503,37 @@ without changing behavior anywhere else."
 (defmacro scroll-on-jump-advice-remove (fn)
   "Remove advice on FN added by `scroll-on-jump-advice-add'."
   (advice-remove fn #'scroll-on-jump-advice--wrapper))
+
+;; -----------
+;; With-Scroll
+;;
+;; Use when wrapping actions that themselves scroll.
+
+;;;###autoload
+(defmacro scroll-on-jump-with-scroll (&rest body) `(scroll-on-jump--impl t ,@body))
+
+;;;###autoload
+(defmacro scroll-on-jump-with-scroll-interactive (fn)
+  "Macro that wraps interactive call to function FN.
+
+Use if you want to use `scroll-on-jump-with-scroll' for a single `key-binding',
+without changing behavior anywhere else."
+  `(lambda () (interactive) (scroll-on-jump-with-scroll (call-interactively ,fn))))
+
+;; Helper function (not public).
+(defun scroll-on-jump-advice--with-scroll-wrapper (old-fn &rest args)
+  "Internal function use to advise using `scroll-on-jump-advice-add' (calling OLD-FN with ARGS)."
+  (scroll-on-jump-with-scroll (apply old-fn args)))
+
+;;;###autoload
+(defmacro scroll-on-jump-with-scroll-advice-remove (fn)
+  "Remove advice on FN added by `scroll-on-jump-with-scroll-advice-add'."
+  (advice-remove fn #'scroll-on-jump-advice--with-scroll-wrapper))
+
+;;;###autoload
+(defmacro scroll-on-jump-with-scroll-advice-add (fn)
+  "Add advice to FN, to instrument it with scrolling capabilities."
+  (advice-add fn :around #'scroll-on-jump-advice--with-scroll-wrapper))
 
 (provide 'scroll-on-jump)
 

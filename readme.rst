@@ -53,12 +53,21 @@ The following functions are exposed.
 ``scroll-on-jump-advice-remove``
    Remove the advice added to the function.
 
-
 Commands that work well include:
 
 - Jump to search result, paragraph, function ... etc.
 - Undo/redo.
 - Go to declaration.
+
+
+Wrapping Commands That Scroll
+-----------------------------
+
+If a command it's self sets a new scroll location,
+these can be wrapped using ``scroll-on-jump-with-scroll-`` prefix,
+so ``scroll-on-jump-with-scroll-interactive``, ``scroll-on-jump-with-scroll-advice-add`` .. etc.
+
+In this case the newly set scroll location will be used when displaying the animation.
 
 
 Key Binding Example
@@ -129,7 +138,14 @@ Here is a more complete example for evil-mode users.
      (scroll-on-jump-advice-add evil-ex-search-next)
      (scroll-on-jump-advice-add evil-ex-search-previous)
      (scroll-on-jump-advice-add evil-forward-paragraph)
-     (scroll-on-jump-advice-add evil-backward-paragraph))
+     (scroll-on-jump-advice-add evil-backward-paragraph)
+
+     ;; Actions that themselves scroll.
+     (scroll-on-jump-with-scroll-advice-add evil-scroll-down)
+     (scroll-on-jump-with-scroll-advice-add evil-scroll-up)
+     (scroll-on-jump-with-scroll-advice-add evil-scroll-line-to-center)
+     (scroll-on-jump-with-scroll-advice-add evil-scroll-line-to-top)
+     (scroll-on-jump-with-scroll-advice-add evil-scroll-line-to-bottom))
 
    (with-eval-after-load 'goto-chg
      (scroll-on-jump-advice-add goto-last-change)
@@ -173,5 +189,5 @@ Until this is available on melpa, straight can be used to install this package.
 Limitations
 ===========
 
-- Any commands that themselves scroll to a new location will not work as expected
+- Any commands that themselves scroll to a new location *and* modify the buffer will not work as expected
   (they may scroll too far for example).
