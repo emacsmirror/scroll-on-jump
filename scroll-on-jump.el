@@ -111,20 +111,23 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
     ((< delta-px 0)
       (let*
         (
-          (scroll-px-prev (- char-height (window-vscroll nil t))) ;; flip.
-          (scroll-px-next (+ scroll-px-prev (- delta-px))) ;; flip.
+          (scroll-px-prev (window-vscroll nil t))
+          (scroll-px-next (+ scroll-px-prev delta-px))
           (lines (/ scroll-px-next char-height))
           (scroll-px (- scroll-px-next (* lines char-height)))
           (lines-remainder 0))
-        (unless (zerop lines)
-          ;; flip
-          (setq lines-remainder
-            (- (scroll-on-jump--scroll-by-lines window (- lines) also-move-point)))
-          (unless (zerop lines-remainder)
-            (setq scroll-px char-height)))
-        (set-window-vscroll window (- char-height scroll-px) t)
 
-        (cons (- lines-remainder) (- lines))))
+        (when (< scroll-px 0)
+          (setq lines (1- lines))
+          (setq scroll-px (+ char-height scroll-px)))
+
+        (unless (zerop lines)
+          (setq lines-remainder (- (scroll-on-jump--scroll-by-lines window lines also-move-point)))
+          (unless (zerop lines-remainder)
+            (setq scroll-px 0)))
+        (set-window-vscroll window scroll-px t)
+
+        (cons lines-remainder lines)))
     ((> delta-px 0)
       (let*
         (
@@ -206,7 +209,8 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
                 (setq step (- step (* dir (- lines-done-abs lines-scroll-abs)))))
 
               ;; Faster alternative to scroll.
-              (scroll-on-jump--scroll-by-lines-simple window step t)
+              (scroll-on-jump--scroll-by-lines-simple window step nil)
+              (forward-line step)
 
               (setq lines-scroll (- lines-scroll step)))
 
@@ -278,8 +282,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
                             (t
                               (* px-scroll-abs factor)))))
                       (px-remainder (- px-target px-done-abs)))
-                    ;; Step result, we must move at least one pixel.
-                    (* dir (max 1 (floor px-remainder))))))
+                    (* dir px-remainder))))
 
               ;; Check if this is the last step.
               (setq px-done-abs (+ px-done-abs (abs step)))
@@ -289,7 +292,12 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
               (pcase-let
                 (
                   (`(,_lines-remainder . ,lines-handled)
-                    (scroll-on-jump--scroll-by-pixels window char-height step t)))
+                    (scroll-on-jump--scroll-by-pixels window char-height step nil)))
+
+                ;; Forward lines separately since we might be at end of the buffer
+                ;; and we want to be able to scroll - even if the point has reached it's limit.
+                (forward-line lines-handled)
+
                 (setq lines-scroll (- lines-scroll lines-handled)))
 
               (setq px-scroll (- px-scroll step)))
@@ -298,15 +306,22 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
             (redisplay t))
           (setq is-early-exit nil))
 
-        ;; ;; Re-enable when editing logic.
-        (when (and (null is-early-exit) (not (zerop px-scroll)))
-          (set-window-vscroll window 0 t)
-          (error "Internal error, 'px-scroll' should be zero"))
+        (cond
+          ;; If we exit early because of input.
+          (is-early-exit
+            ;; Early exit, reset pixel scroll and scroll lines.
+            (set-window-vscroll window 0 t)
+            (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))
 
-        ;; If we exit early because of input.
-        (when is-early-exit
-          (set-window-vscroll window 0 t)
-          (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil)))
+          ;; Sanity check, if this fails there is an issue with internal logic.
+          ((not (zerop px-scroll))
+            (set-window-vscroll window 0 t)
+            (error "Internal error, 'px-scroll' should be zero"))
+
+          ;; Also should never happen.
+          ((not (zerop (window-vscroll window t)))
+            (set-window-vscroll window 0 t)
+            (message "Warning, sub-pixel scroll left set!"))))
 
       ;; Non-animated scrolling (immediate).
       (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil)))
