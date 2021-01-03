@@ -397,7 +397,8 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
                     (goto-char (window-start window))
                     (forward-line lines-scroll)))))))
 
-        (scroll-on-jump--scroll-impl window lines-scroll dir (not (eq (point) point-next))))))
+        (let ((also-move-point (not (eq (point) point-next))))
+          (scroll-on-jump--scroll-impl window lines-scroll dir also-move-point)))))
 
   (goto-char point-next))
 
@@ -460,12 +461,9 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
                       (dir
                         (if (< window-start-prev window-start-next)
                           1
-                          -1)))
-                    (scroll-on-jump--scroll-impl
-                      window
-                      (* dir lines-scroll)
-                      dir
-                      (not (eq (point) point-next)))))
+                          -1))
+                      (also-move-point (not (eq (point) point-next))))
+                    (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
                 (goto-char point-next))
               (scroll-on-jump-auto-center window point-prev point-next))))))))
 
