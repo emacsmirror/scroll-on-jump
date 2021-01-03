@@ -395,9 +395,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
       (window (selected-window))
 
       (point-prev (point))
-      (point-next nil)
-
-      (has-context-changed t))
+      (point-next nil))
 
     (prog1
       (save-excursion
@@ -413,20 +411,20 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
             ,@body)
           (setq point-next (point))))
 
-      (when
-        (and
-          (eq buf (current-buffer))
-          (eq window (selected-window))
-          (eq buf (window-buffer window)))
-        (setq has-context-changed nil))
-
       (cond
-        (has-context-changed
-          ;; Context changed, use a fallback.
-          (goto-char point-next))
-        (t
-          ;; Calculate the new window start.
-          (scroll-on-jump-auto-center window point-prev point-next))))))
+        ( ;; Perform animated scroll.
+          (and
+            ;; Buffer/Context changed.
+            (eq buf (window-buffer window)) (eq buf (current-buffer)) (eq window (selected-window))
+
+            ;; Disallow recursion.
+            (not (boundp 'scroll-on-jump--resurse)))
+
+          (let ((scroll-on-jump--resurse t))
+            (scroll-on-jump-auto-center window point-prev point-next)))
+
+        (t ;; Context changed or recursed, simply jump.
+          (goto-char point-next))))))
 
 ;;;###autoload
 (defmacro scroll-on-jump-interactive (fn)
