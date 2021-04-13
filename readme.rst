@@ -11,7 +11,7 @@ This package allows you to control the scrolling on any operation that jumps to 
 Since this might not always be desired, this can be applied using advice or individual key bindings,
 if you prefer to limit the changes to certain shortcuts.
 
-.. Available via `melpa <https://melpa.org/#/scroll-on-jump>`__.
+Available via `melpa <https://melpa.org/#/scroll-on-jump>`__.
 
 `See demo video <https://youtu.be/7krbhASqwLY>`__.
 
