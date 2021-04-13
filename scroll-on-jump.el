@@ -41,7 +41,7 @@
 ;; Custom Variables
 
 (defcustom scroll-on-jump-duration 0.4
-  "The time in allowed (in seconds) for scrolling to the next position (zero disables)."
+  "Duration (in seconds) for scrolling to the next position (zero disables)."
   :group 'scroll-on-jump
   :type 'integer)
 
