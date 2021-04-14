@@ -139,7 +139,6 @@ Here is a more complete example for evil-mode users.
      (scroll-on-jump-advice-add evil-ex-search-previous)
      (scroll-on-jump-advice-add evil-forward-paragraph)
      (scroll-on-jump-advice-add evil-backward-paragraph)
-     (scroll-on-jump-advice-add evil-goto-first-line)
      (scroll-on-jump-advice-add evil-goto-mark)
 
      ;; Actions that themselves scroll.
