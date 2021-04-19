@@ -217,8 +217,11 @@ Moving the point when ALSO-MOVE-POINT is set."
 
               (setq lines-scroll (- lines-scroll step)))
 
-            ;; Force `redisplay', without this redrawing can be a little choppy.
-            (redisplay t))
+            ;; Skip the last redraw, so there isn't 2x update when
+            ;; the caller moves the point to the final location.
+            (when (< lines-done-abs lines-scroll-abs)
+              ;; Force `redisplay', without this redrawing can be a little choppy.
+              (redisplay t)))
           (setq is-early-exit nil))
 
         ;; ;; Re-enable when editing logic.
@@ -308,8 +311,11 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
 
               (setq px-scroll (- px-scroll step)))
 
-            ;; Force `redisplay', without this redrawing can be a little choppy.
-            (redisplay t))
+            ;; Skip the last redraw, so there isn't 2x update when
+            ;; the caller moves the point to the final location.
+            (when (< px-done-abs px-scroll-abs)
+              ;; Force `redisplay', without this redrawing can be a little choppy.
+              (redisplay t)))
           (setq is-early-exit nil))
 
         (cond
@@ -343,7 +349,14 @@ Moving the point when ALSO-MOVE-POINT is set."
     ((zerop scroll-on-jump-duration)
       (scroll-on-jump--immediate-scroll window lines-scroll dir))
     ;; Use pixel scrolling.
-    ((and scroll-on-jump-smooth (display-graphic-p))
+    ;;
+    ;; NOTE: only pixel scroll >1 lines so actions that move the cursor up/down one
+    ;; don't attempt to smooth scroll.
+    ;; While this works without problems, it does cause a flicker redrawing the point.
+    ;; Harmless but seems like a glitch if `scroll-on-jump' is being applied to
+    ;; `next-line' or `previous-line'.
+    ;; So it's simplest not to use smooth scroll in this particular case.
+    ((and scroll-on-jump-smooth (display-graphic-p) (> 1 (abs lines-scroll)))
       (scroll-on-jump--animated-scroll-by-px window lines-scroll dir also-move-point))
     ;; Use line scrolling.
     (t
@@ -470,7 +483,8 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
                           -1))
                       (also-move-point (not (eq (point) point-next))))
                     (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
-                (goto-char point-next))
+                (prog1 (goto-char point-next)
+                  (redisplay t)))
               (scroll-on-jump-auto-center window point-prev point-next))))))))
 
 
