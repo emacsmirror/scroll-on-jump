@@ -459,33 +459,29 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
               ;; Buffer/Context changed.
               (eq buf (window-buffer window))
               (eq buf (current-buffer))
-              (eq window (selected-window))
-
-              ;; Disallow recursion.
-              (not (boundp 'scroll-on-jump--resurse))))
+              (eq window (selected-window))))
 
           (goto-char point-next))
 
         (t ;; Perform animated scroll.
-          (let ((scroll-on-jump--resurse t))
-            (if window-start-prev
-              (progn
-                (setq window-start-next (window-start window))
-                (unless (eq window-start-prev window-start-next)
-                  (set-window-start window window-start-prev)
-                  (let
-                    (
-                      (lines-scroll
-                        (1- (count-screen-lines window-start-prev window-start-next t window)))
-                      (dir
-                        (if (< window-start-prev window-start-next)
-                          1
-                          -1))
-                      (also-move-point (not (eq (point) point-next))))
-                    (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
-                (prog1 (goto-char point-next)
-                  (redisplay t)))
-              (scroll-on-jump-auto-center window point-prev point-next))))))))
+          (if window-start-prev
+            (progn
+              (setq window-start-next (window-start window))
+              (unless (eq window-start-prev window-start-next)
+                (set-window-start window window-start-prev)
+                (let
+                  (
+                    (lines-scroll
+                      (1- (count-screen-lines window-start-prev window-start-next t window)))
+                    (dir
+                      (if (< window-start-prev window-start-next)
+                        1
+                        -1))
+                    (also-move-point (not (eq (point) point-next))))
+                  (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
+              (prog1 (goto-char point-next)
+                (redisplay t)))
+            (scroll-on-jump-auto-center window point-prev point-next)))))))
 
 
 ;; ---------------------------------------------------------------------------
