@@ -507,7 +507,9 @@ without changing behavior anywhere else."
 
 ;; Helper function (not public).
 (defun scroll-on-jump-advice--wrapper (old-fn &rest args)
-  "Internal function use to advise using `scroll-on-jump-advice-add' (calling OLD-FN with ARGS)."
+  "Internal function use to advise using `scroll-on-jump-advice-add'.
+
+This calls (calling OLD-FN with ARGS)."
   (scroll-on-jump (apply old-fn args)))
 
 ;;;###autoload
@@ -527,7 +529,7 @@ without changing behavior anywhere else."
 
 ;;;###autoload
 (defmacro scroll-on-jump-with-scroll (&rest body)
-  "Main macro that wraps BODY in logic that reacts to change in `point' and vertical scroll."
+  "Main macro wrapping BODY, handling change `point' and vertical scroll."
   `(scroll-on-jump--impl t ,@body))
 
 ;;;###autoload
@@ -540,7 +542,9 @@ without changing behavior anywhere else."
 
 ;; Helper function (not public).
 (defun scroll-on-jump-advice--with-scroll-wrapper (old-fn &rest args)
-  "Internal function use to advise using `scroll-on-jump-advice-add' (calling OLD-FN with ARGS)."
+  "Internal function use to advise using `scroll-on-jump-advice-add'.
+
+This calls OLD-FN with ARGS."
   (scroll-on-jump-with-scroll (apply old-fn args)))
 
 ;;;###autoload
