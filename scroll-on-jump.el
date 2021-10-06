@@ -40,19 +40,20 @@
 ;; ---------------------------------------------------------------------------
 ;; Custom Variables
 
+(defgroup scroll-on-jump nil
+  "Configure smooth scrolling when jumping to new locations."
+  :group 'scrolling)
+
 (defcustom scroll-on-jump-duration 0.4
   "Duration (in seconds) for scrolling to the next position (zero disables)."
-  :group 'scroll-on-jump
   :type 'integer)
 
 (defcustom scroll-on-jump-smooth t
   "Use smooth (pixel) scrolling, otherwise scroll by lines."
-  :group 'scroll-on-jump
   :type 'boolean)
 
 (defcustom scroll-on-jump-use-curve t
   "Apply a curve to the scroll speed, starting and ending slow."
-  :group 'scroll-on-jump
   :type 'boolean)
 
 
