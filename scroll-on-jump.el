@@ -429,6 +429,32 @@ Moving the point when ALSO-MOVE-POINT is set."
 
   (goto-char point-next))
 
+;; We cannot store the point before running BODY because
+;; that point may be invalid (outside point-min / point-max for e.g)
+;; after BODY is complete.
+;; Use `save-excursion' & `prog1' so the point's can be retrieved relative
+;; to the modified buffers state.
+;; We could use markers but properly clearing them for garbage-collection
+;; would involve error handling (see note below).
+(defmacro scroll-on-jump--outer-scoped-mark (point-init point-out &rest body)
+  "Set POINT-INIT and store its value in POINT-OUT outside the scope of BODY."
+  `
+  (prog1
+    (save-excursion
+      (goto-char ,point-init)
+      ,@body)
+    (setq ,point-out (point))))
+
+(defmacro scroll-on-jump--inner-scoped-mark (point-init point-out &rest body)
+  "Set POINT-INIT and store its value in POINT-OUT in the scope of BODY."
+  `
+  (save-excursion
+    (prog1
+      (progn
+        (goto-char ,point-init)
+        ,@body)
+      (setq ,point-out (point)))))
+
 (defmacro scroll-on-jump--impl (use-window-start &rest body)
   "Main macro that wraps BODY in logic that reacts to change in `point'.
 Argument USE-WINDOW-START detects window scrolling when non-nil."
@@ -438,17 +464,17 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
       (buf (current-buffer))
       (window (selected-window))
 
-      (point-prev (point))
+      (point-prev nil)
       (point-next nil)
 
       (window-start-prev nil)
       (window-start-next nil))
 
-    (when ,use-window-start
-      (setq window-start-prev (window-start window)))
-
     (prog1
-      (save-excursion
+      (let
+        ( ;; Postpone point-motion-hooks until later.
+          (inhibit-point-motion-hooks t)
+          (point-orig (point)))
         ;; Note, we could catch and re-raise errors,
         ;; this has the advantage that we could get the resulting cursor location
         ;; even in the case of an error.
@@ -456,10 +482,13 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
         ;; As it wont show the full back-trace, only the error message.
         ;; So don't prioritize correct jumping in the case of errors and assume errors
         ;; are not something that happen after cursor motion.
-        (prog1
-          (progn
-            ,@body)
-          (setq point-next (point))))
+        (scroll-on-jump--outer-scoped-mark point-orig point-prev
+          (scroll-on-jump--outer-scoped-mark (window-start window) window-start-prev
+            (scroll-on-jump--inner-scoped-mark point-orig point-next
+              ;; Run the main body of this macro.
+              ;; It's important the result if returned (hence the `prog1' use).
+              ,@body))))
+
 
       (cond
         ( ;; Context changed or recursed, simply jump.
@@ -474,7 +503,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
 
         (t ;; Perform animated scroll.
           (cond
-            (window-start-prev
+            (,use-window-start
               (setq window-start-next (window-start window))
               (unless (eq window-start-prev window-start-next)
                 (set-window-start window window-start-prev)
