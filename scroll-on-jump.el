@@ -171,7 +171,7 @@ Moving the point when ALSO-MOVE-POINT is set."
       (time-limit
         (*
           scroll-on-jump-duration
-          (min 1.0 (/ (float (abs lines-scroll)) (float (window-height window))))))
+          (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
       (use-curve scroll-on-jump-use-curve))
 
     ;; Animated scrolling (early exit on input to avoid annoying lag).
@@ -251,7 +251,7 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
       (time-limit
         (*
           scroll-on-jump-duration
-          (min 1.0 (/ (float (abs lines-scroll)) (float (window-height window))))))
+          (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
       (use-curve scroll-on-jump-use-curve)
       (char-height (frame-char-height (window-frame window))))
 
@@ -374,7 +374,7 @@ Moving the point when ALSO-MOVE-POINT is set."
     (when (> lines 0)
       (let
         (
-          (height (window-height window))
+          (height (window-body-height window))
           (lines-scroll 0)
           (dir
             (cond
