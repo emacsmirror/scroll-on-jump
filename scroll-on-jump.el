@@ -361,7 +361,7 @@ Moving the point when ALSO-MOVE-POINT is set."
     ;; Harmless but seems like a glitch if `scroll-on-jump' is being applied to
     ;; `next-line' or `previous-line'.
     ;; So it's simplest not to use smooth scroll in this particular case.
-    ((and scroll-on-jump-smooth (display-graphic-p) (> 1 (abs lines-scroll)))
+    ((and scroll-on-jump-smooth (display-graphic-p) (> (abs lines-scroll) 1))
       (scroll-on-jump--animated-scroll-by-px window lines-scroll dir also-move-point))
     ;; Use line scrolling.
     (t
