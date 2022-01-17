@@ -483,7 +483,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
         ;; So don't prioritize correct jumping in the case of errors and assume errors
         ;; are not something that happen after cursor motion.
         (scroll-on-jump--outer-scoped-mark point-orig point-prev
-          (scroll-on-jump--outer-scoped-mark (window-start window) window-start-prev
+          (scroll-on-jump--inner-scoped-mark (window-start window) window-start-prev
             (scroll-on-jump--inner-scoped-mark point-orig point-next
               ;; Run the main body of this macro.
               ;; It's important the result if returned (hence the `prog1' use).
