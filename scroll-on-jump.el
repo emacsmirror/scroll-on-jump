@@ -502,6 +502,12 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
           (goto-char point-next))
 
         (t ;; Perform animated scroll.
+
+          ;; It's possible the requested `point-next' exceeds the maximum point.
+          ;; This causes an error counting lines and calculating offsets,
+          ;; so clamp it here to avoid complications later.
+          (setq point-next (min point-next (point-max)))
+
           (cond
             (,use-window-start
               (setq window-start-next (window-start window))
