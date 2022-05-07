@@ -179,13 +179,7 @@ Until this is available on melpa, straight can be used to install this package.
 
    (use-package scroll-on-jump
      :config
-     (setq scroll-on-jump-duration 0.6)
-
-     :straight
-     (scroll-on-jump
-       :type git
-       :host gitlab
-       :repo "ideasman42/emacs-scroll-on-jump"))
+     (setq scroll-on-jump-duration 0.6))
 
 
 Limitations
