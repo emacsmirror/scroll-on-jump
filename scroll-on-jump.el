@@ -139,6 +139,22 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   "Blend FACTOR between A and B using ease style curvature."
   (+ a (* (- b a) (- (* 3.0 factor factor) (* 2.0 factor factor factor)))))
 
+(defsubst scroll-on-jump--evil-visual-mode-workaround ()
+  "Workaround for `evil-mode' line-mode."
+  ;; Without this, the line mode point jumps back to the origin,
+  ;; the mark needs to be set to the `point'.
+  ;; https://github.com/emacs-evil/evil/issues/1708
+  (when
+    (and
+      (fboundp 'evil-visual-state-p)
+      (funcall 'evil-visual-state-p)
+      (fboundp 'evil-visual-type)
+      (eq (funcall 'evil-visual-type) 'line)
+      (boundp 'evil-visual-point))
+    (let ((mark (symbol-value 'evil-visual-point)))
+      (when (markerp mark)
+        (set-marker mark (point))))))
+
 
 ;; ---------------------------------------------------------------------------
 ;; Internal Logic
@@ -516,7 +532,9 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
               (prog1 (goto-char point-next)
                 (redisplay t)))
             (t
-              (scroll-on-jump-auto-center window point-prev point-next))))))))
+              (scroll-on-jump-auto-center window point-prev point-next)))
+
+          (scroll-on-jump--evil-visual-mode-workaround))))))
 
 
 ;; ---------------------------------------------------------------------------
