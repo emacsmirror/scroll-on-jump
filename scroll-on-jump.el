@@ -230,7 +230,7 @@ Moving the point when ALSO-MOVE-POINT is set."
                 (redisplay t)))
             (setq is-early-exit nil))
 
-          ;; ;; Re-enable when editing logic.
+          ;; Re-enable when editing logic.
           (when (and (null is-early-exit) (not (zerop lines-scroll)))
             (error "Internal error, 'lines-scroll' should be zero"))
 
