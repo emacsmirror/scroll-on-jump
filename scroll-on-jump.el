@@ -54,13 +54,12 @@
 Move LINES in WINDOW, when ALSO-MOVE-POINT is set, the point is moved too."
   (when also-move-point
     (forward-line lines))
-  (set-window-start
-    window
-    (save-excursion
-      (goto-char (window-start window))
-      (forward-line lines)
-      (point))
-    t))
+  (set-window-start window
+                    (save-excursion
+                      (goto-char (window-start window))
+                      (forward-line lines)
+                      (point))
+                    t))
 
 ;; Per-line Scroll.
 ;; return remainder of lines to scroll (matching forward-line).
@@ -75,13 +74,12 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
         (unless (zerop lines-point-remainder)
           (setq lines (- lines lines-point-remainder)))))
     (unless (zerop lines)
-      (set-window-start
-        window
-        (save-excursion
-          (goto-char (window-start window))
-          (setq lines-remainder (forward-line lines))
-          (point))
-        t)
+      (set-window-start window
+                        (save-excursion
+                          (goto-char (window-start window))
+                          (setq lines-remainder (forward-line lines))
+                          (point))
+                        t)
       (when also-move-point
         (unless (zerop lines-remainder)
           (forward-line (- lines-remainder)))))
@@ -97,43 +95,39 @@ Argument CHAR-HEIGHT The result of `frame-char-height'.
 Argument DELTA-PX The number of pixels to scroll (signed).
 Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   (cond
-    ((< delta-px 0)
-      (let*
-        (
-          (scroll-px-prev (window-vscroll nil t))
-          (scroll-px-next (+ scroll-px-prev delta-px))
-          (lines (/ scroll-px-next char-height))
-          (scroll-px (- scroll-px-next (* lines char-height)))
-          (lines-remainder 0))
+   ((< delta-px 0)
+    (let* ((scroll-px-prev (window-vscroll nil t))
+           (scroll-px-next (+ scroll-px-prev delta-px))
+           (lines (/ scroll-px-next char-height))
+           (scroll-px (- scroll-px-next (* lines char-height)))
+           (lines-remainder 0))
 
-        (when (< scroll-px 0)
-          (setq lines (1- lines))
-          (setq scroll-px (+ char-height scroll-px)))
+      (when (< scroll-px 0)
+        (setq lines (1- lines))
+        (setq scroll-px (+ char-height scroll-px)))
 
-        (unless (zerop lines)
-          (setq lines-remainder (- (scroll-on-jump--scroll-by-lines window lines also-move-point)))
-          (unless (zerop lines-remainder)
-            (setq scroll-px 0)))
-        (set-window-vscroll window scroll-px t)
+      (unless (zerop lines)
+        (setq lines-remainder (- (scroll-on-jump--scroll-by-lines window lines also-move-point)))
+        (unless (zerop lines-remainder)
+          (setq scroll-px 0)))
+      (set-window-vscroll window scroll-px t)
 
-        (cons lines-remainder lines)))
-    ((> delta-px 0)
-      (let*
-        (
-          (scroll-px-prev (window-vscroll nil t))
-          (scroll-px-next (+ scroll-px-prev delta-px))
-          (lines (/ scroll-px-next char-height))
-          (scroll-px (- scroll-px-next (* lines char-height)))
-          (lines-remainder 0))
-        (unless (zerop lines)
-          (setq lines-remainder (scroll-on-jump--scroll-by-lines window lines also-move-point))
-          (unless (zerop lines-remainder)
-            (setq scroll-px char-height)))
-        (set-window-vscroll window scroll-px t)
-        (cons lines-remainder lines)))
-    ;; no lines scrolled.
-    (t
-      (cons 0 0))))
+      (cons lines-remainder lines)))
+   ((> delta-px 0)
+    (let* ((scroll-px-prev (window-vscroll nil t))
+           (scroll-px-next (+ scroll-px-prev delta-px))
+           (lines (/ scroll-px-next char-height))
+           (scroll-px (- scroll-px-next (* lines char-height)))
+           (lines-remainder 0))
+      (unless (zerop lines)
+        (setq lines-remainder (scroll-on-jump--scroll-by-lines window lines also-move-point))
+        (unless (zerop lines-remainder)
+          (setq scroll-px char-height)))
+      (set-window-vscroll window scroll-px t)
+      (cons lines-remainder lines)))
+   ;; no lines scrolled.
+   (t
+    (cons 0 0))))
 
 (defun scroll-on-jump--interpolate-ease (a b factor)
   "Blend FACTOR between A and B using ease style curvature."
@@ -144,13 +138,11 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   ;; Without this, the line mode point jumps back to the origin,
   ;; the mark needs to be set to the `point'.
   ;; https://github.com/emacs-evil/evil/issues/1708
-  (when
-    (and
-      (fboundp 'evil-visual-state-p)
-      (funcall 'evil-visual-state-p)
-      (fboundp 'evil-visual-type)
-      (eq (funcall 'evil-visual-type) 'line)
-      (boundp 'evil-visual-point))
+  (when (and (fboundp 'evil-visual-state-p)
+             (funcall 'evil-visual-state-p)
+             (fboundp 'evil-visual-type)
+             (eq (funcall 'evil-visual-type) 'line)
+             (boundp 'evil-visual-point))
     (let ((mark (symbol-value 'evil-visual-point)))
       (when (markerp mark)
         (set-marker mark (point))))))
@@ -167,185 +159,167 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 (defun scroll-on-jump--animated-scroll-by-line (window lines-scroll dir also-move-point)
   "Animated scroll WINDOW LINES-SCROLL lines along DIR direction.
 Moving the point when ALSO-MOVE-POINT is set."
-  (let
-    (
-      (time-init (current-time))
-      ;; For motion less than a window, scale down the time allowed.
-      ;; This means moving a short distance wont be given the full time.
-      (time-limit
-        (*
+  (let ((time-init (current-time))
+        ;; For motion less than a window, scale down the time allowed.
+        ;; This means moving a short distance wont be given the full time.
+        (time-limit
+         (*
           scroll-on-jump-duration
           (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
-      (use-curve scroll-on-jump-use-curve))
+        (use-curve scroll-on-jump-use-curve))
 
     ;; Animated scrolling (early exit on input to avoid annoying lag).
     (cond
-      ((not (zerop lines-scroll))
-        (let
-          (
-            (is-early-exit t)
+     ((not (zerop lines-scroll))
+      (let ((is-early-exit t)
             (inhibit-point-motion-hooks t)
             (lines-done-abs 0)
             (lines-scroll-abs (abs lines-scroll)))
-          (while-no-input
-            (while (< lines-done-abs lines-scroll-abs)
-              ;; Inhibit quit in all of this logic except re-display.
-              (let
-                (
-                  (inhibit-quit t)
+        (while-no-input
+          (while (< lines-done-abs lines-scroll-abs)
+            ;; Inhibit quit in all of this logic except re-display.
+            (let ((inhibit-quit t)
                   ;; Number of lines to move for this redraw.
                   (step
-                    (let*
-                      (
-                        (time-elapsed (float-time (time-subtract (current-time) time-init)))
-                        (factor (min 1.0 (/ time-elapsed time-limit)))
-                        (lines-target
-                          (floor
+                   (let* ((time-elapsed (float-time (time-subtract (current-time) time-init)))
+                          (factor (min 1.0 (/ time-elapsed time-limit)))
+                          (lines-target
+                           (floor
                             (cond
-                              (use-curve
-                                (scroll-on-jump--interpolate-ease 0.0 lines-scroll-abs factor))
-                              (t
-                                (* lines-scroll-abs factor)))))
-                        (lines-remainder (- lines-target lines-done-abs)))
-                      ;; Step result, we must move at least one line.
-                      (* dir (max 1 lines-remainder)))))
+                             (use-curve
+                              (scroll-on-jump--interpolate-ease 0.0 lines-scroll-abs factor))
+                             (t
+                              (* lines-scroll-abs factor)))))
+                          (lines-remainder (- lines-target lines-done-abs)))
+                     ;; Step result, we must move at least one line.
+                     (* dir (max 1 lines-remainder)))))
 
-                ;; Check if this is the last step.
-                (setq lines-done-abs (+ lines-done-abs (abs step)))
-                (when (> lines-done-abs lines-scroll-abs)
-                  (setq step (- step (* dir (- lines-done-abs lines-scroll-abs)))))
+              ;; Check if this is the last step.
+              (setq lines-done-abs (+ lines-done-abs (abs step)))
+              (when (> lines-done-abs lines-scroll-abs)
+                (setq step (- step (* dir (- lines-done-abs lines-scroll-abs)))))
 
-                ;; Faster alternative to scroll.
-                (scroll-on-jump--scroll-by-lines-simple window step nil)
+              ;; Faster alternative to scroll.
+              (scroll-on-jump--scroll-by-lines-simple window step nil)
 
-                (when also-move-point
-                  (forward-line step))
+              (when also-move-point
+                (forward-line step))
 
-                (setq lines-scroll (- lines-scroll step)))
+              (setq lines-scroll (- lines-scroll step)))
 
-              ;; Skip the last redraw, so there isn't 2x update when
-              ;; the caller moves the point to the final location.
-              (when (< lines-done-abs lines-scroll-abs)
-                ;; Force `redisplay', without this redrawing can be a little choppy.
-                (redisplay t)))
-            (setq is-early-exit nil))
+            ;; Skip the last redraw, so there isn't 2x update when
+            ;; the caller moves the point to the final location.
+            (when (< lines-done-abs lines-scroll-abs)
+              ;; Force `redisplay', without this redrawing can be a little choppy.
+              (redisplay t)))
+          (setq is-early-exit nil))
 
-          ;; Re-enable when editing logic.
-          (when (and (null is-early-exit) (not (zerop lines-scroll)))
-            (error "Internal error, 'lines-scroll' should be zero"))
+        ;; Re-enable when editing logic.
+        (when (and (null is-early-exit) (not (zerop lines-scroll)))
+          (error "Internal error, 'lines-scroll' should be zero"))
 
-          ;; If we exit early because of input.
-          (when is-early-exit
-            (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))))
+        ;; If we exit early because of input.
+        (when is-early-exit
+          (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))))
 
-      ;; Non-animated scrolling (immediate).
-      (t
-        (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))))
+     ;; Non-animated scrolling (immediate).
+     (t
+      (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))))
 
   (run-window-scroll-functions window))
 
 (defun scroll-on-jump--animated-scroll-by-px (window lines-scroll dir also-move-point)
   "Animated scroll WINDOW LINES-SCROLL lines along DIR direction.
 Argument ALSO-MOVE-POINT moves the point while scrolling."
-  (let
-    (
-      (time-init (current-time))
-      ;; For motion less than a window, scale down the time allowed.
-      ;; This means moving a short distance wont be given the full time.
-      (time-limit
-        (*
+  (let ((time-init (current-time))
+        ;; For motion less than a window, scale down the time allowed.
+        ;; This means moving a short distance wont be given the full time.
+        (time-limit
+         (*
           scroll-on-jump-duration
           (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
-      (use-curve scroll-on-jump-use-curve)
-      (char-height (frame-char-height (window-frame window))))
+        (use-curve scroll-on-jump-use-curve)
+        (char-height (frame-char-height (window-frame window))))
 
     ;; Animated scrolling (early exit on input to avoid annoying lag).
     (cond
-      ((not (zerop lines-scroll))
-        (let
-          (
-            (is-early-exit t)
+     ((not (zerop lines-scroll))
+      (let ((is-early-exit t)
             (inhibit-point-motion-hooks t)
             (px-done-abs 0)
             (px-scroll-abs (abs (* lines-scroll char-height)))
             (px-scroll (* lines-scroll char-height)))
 
-          ;; Workaround for situations when the `point' starts at the window bounds.
-          ;; If this happens we can't do any sub-pixel scrolling as the `point' locks scrolling.
-          ;; This is only needed for pixel level scrolling.
-          ;;
-          ;; We can move arbitrary lines here since the final point is set at the very end.
-          (when also-move-point
-            (forward-line dir))
+        ;; Workaround for situations when the `point' starts at the window bounds.
+        ;; If this happens we can't do any sub-pixel scrolling as the `point' locks scrolling.
+        ;; This is only needed for pixel level scrolling.
+        ;;
+        ;; We can move arbitrary lines here since the final point is set at the very end.
+        (when also-move-point
+          (forward-line dir))
 
-          (while-no-input
-            (while (< px-done-abs px-scroll-abs)
-              ;; Inhibit quit in all of this logic except re-display.
-              (let
-                (
-                  (inhibit-quit t)
+        (while-no-input
+          (while (< px-done-abs px-scroll-abs)
+            ;; Inhibit quit in all of this logic except re-display.
+            (let ((inhibit-quit t)
                   ;; Number of pixels to move for this redraw.
                   (step
-                    (let*
-                      (
-                        (time-elapsed (float-time (time-subtract (current-time) time-init)))
-                        (factor (min 1.0 (/ time-elapsed time-limit)))
-                        (px-target
-                          (floor
+                   (let* ((time-elapsed (float-time (time-subtract (current-time) time-init)))
+                          (factor (min 1.0 (/ time-elapsed time-limit)))
+                          (px-target
+                           (floor
                             (cond
-                              (use-curve
-                                (scroll-on-jump--interpolate-ease 0.0 px-scroll-abs factor))
-                              (t
-                                (* px-scroll-abs factor)))))
-                        (px-remainder (- px-target px-done-abs)))
-                      (* dir px-remainder))))
+                             (use-curve
+                              (scroll-on-jump--interpolate-ease 0.0 px-scroll-abs factor))
+                             (t
+                              (* px-scroll-abs factor)))))
+                          (px-remainder (- px-target px-done-abs)))
+                     (* dir px-remainder))))
 
-                ;; Check if this is the last step.
-                (setq px-done-abs (+ px-done-abs (abs step)))
-                (when (> px-done-abs px-scroll-abs)
-                  (setq step (- step (* dir (- px-done-abs px-scroll-abs)))))
+              ;; Check if this is the last step.
+              (setq px-done-abs (+ px-done-abs (abs step)))
+              (when (> px-done-abs px-scroll-abs)
+                (setq step (- step (* dir (- px-done-abs px-scroll-abs)))))
 
-                (pcase-let
-                  (
-                    (`(,_lines-remainder . ,lines-handled)
-                      (scroll-on-jump--scroll-by-pixels window char-height step nil)))
+              (pcase-let ((`(,_lines-remainder . ,lines-handled)
+                           (scroll-on-jump--scroll-by-pixels window char-height step nil)))
 
-                  ;; Forward lines separately since we might be at end of the buffer
-                  ;; and we want to be able to scroll - even if the point has reached it's limit.
-                  (when also-move-point
-                    (forward-line lines-handled))
+                ;; Forward lines separately since we might be at end of the buffer
+                ;; and we want to be able to scroll - even if the point has reached it's limit.
+                (when also-move-point
+                  (forward-line lines-handled))
 
-                  (setq lines-scroll (- lines-scroll lines-handled)))
+                (setq lines-scroll (- lines-scroll lines-handled)))
 
-                (setq px-scroll (- px-scroll step)))
+              (setq px-scroll (- px-scroll step)))
 
-              ;; Skip the last redraw, so there isn't 2x update when
-              ;; the caller moves the point to the final location.
-              (when (< px-done-abs px-scroll-abs)
-                ;; Force `redisplay', without this redrawing can be a little choppy.
-                (redisplay t)))
-            (setq is-early-exit nil))
+            ;; Skip the last redraw, so there isn't 2x update when
+            ;; the caller moves the point to the final location.
+            (when (< px-done-abs px-scroll-abs)
+              ;; Force `redisplay', without this redrawing can be a little choppy.
+              (redisplay t)))
+          (setq is-early-exit nil))
 
-          (cond
-            ;; If we exit early because of input.
-            (is-early-exit
-              ;; Early exit, reset pixel scroll and scroll lines.
-              (set-window-vscroll window 0 t)
-              (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))
+        (cond
+         ;; If we exit early because of input.
+         (is-early-exit
+          ;; Early exit, reset pixel scroll and scroll lines.
+          (set-window-vscroll window 0 t)
+          (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))
 
-            ;; Sanity check, if this fails there is an issue with internal logic.
-            ((not (zerop px-scroll))
-              (set-window-vscroll window 0 t)
-              (error "Internal error, 'px-scroll' should be zero"))
+         ;; Sanity check, if this fails there is an issue with internal logic.
+         ((not (zerop px-scroll))
+          (set-window-vscroll window 0 t)
+          (error "Internal error, 'px-scroll' should be zero"))
 
-            ;; Also should never happen.
-            ((not (zerop (window-vscroll window t)))
-              (set-window-vscroll window 0 t)
-              (message "Warning, sub-pixel scroll left set!")))))
+         ;; Also should never happen.
+         ((not (zerop (window-vscroll window t)))
+          (set-window-vscroll window 0 t)
+          (message "Warning, sub-pixel scroll left set!")))))
 
-      ;; Non-animated scrolling (immediate).
-      (t
-        (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))))
+     ;; Non-animated scrolling (immediate).
+     (t
+      (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))))
 
   (run-window-scroll-functions window))
 
@@ -354,79 +328,74 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
 Moving the point when ALSO-MOVE-POINT is set."
 
   (cond
-    ;; No animation.
-    ((zerop scroll-on-jump-duration)
-      (scroll-on-jump--immediate-scroll window lines-scroll dir))
-    ;; Use pixel scrolling.
-    ;;
-    ;; NOTE: only pixel scroll >1 lines so actions that move the cursor up/down one
-    ;; don't attempt to smooth scroll.
-    ;; While this works without problems, it does cause a flicker redrawing the point.
-    ;; Harmless but seems like a glitch if `scroll-on-jump' is being applied to
-    ;; `next-line' or `previous-line'.
-    ;; So it's simplest not to use smooth scroll in this particular case.
-    ((and scroll-on-jump-smooth (display-graphic-p) (> (abs lines-scroll) 1))
-      (scroll-on-jump--animated-scroll-by-px window lines-scroll dir also-move-point))
-    ;; Use line scrolling.
-    (t
-      (scroll-on-jump--animated-scroll-by-line window lines-scroll dir also-move-point))))
+   ;; No animation.
+   ((zerop scroll-on-jump-duration)
+    (scroll-on-jump--immediate-scroll window lines-scroll dir))
+   ;; Use pixel scrolling.
+   ;;
+   ;; NOTE: only pixel scroll >1 lines so actions that move the cursor up/down one
+   ;; don't attempt to smooth scroll.
+   ;; While this works without problems, it does cause a flicker redrawing the point.
+   ;; Harmless but seems like a glitch if `scroll-on-jump' is being applied to
+   ;; `next-line' or `previous-line'.
+   ;; So it's simplest not to use smooth scroll in this particular case.
+   ((and scroll-on-jump-smooth (display-graphic-p) (> (abs lines-scroll) 1))
+    (scroll-on-jump--animated-scroll-by-px window lines-scroll dir also-move-point))
+   ;; Use line scrolling.
+   (t
+    (scroll-on-jump--animated-scroll-by-line window lines-scroll dir also-move-point))))
 
 (defun scroll-on-jump-auto-center (window point-prev point-next)
   "Re-frame WINDOW from POINT-PREV to POINT-NEXT, optionally animating."
   ;; Count lines, excluding the current line.
   (let ((lines (1- (count-screen-lines point-prev point-next t window))))
     (when (> lines 0)
-      (let
-        (
-          (height (window-body-height window))
-          (lines-scroll 0)
-          (dir
-            (cond
+      (let ((height (window-body-height window))
+            (lines-scroll 0)
+            (dir
+             (cond
               ((< point-prev point-next)
-                1)
+               1)
               (t
-                -1))))
+               -1))))
 
         (cond
-          ((eq dir 1)
-            (let*
-              (
-                (window-lines-prev (count-screen-lines (window-start window) point-prev t window))
-                (window-lines-next (+ window-lines-prev lines))
-                (lines-limit (max (/ height 2) window-lines-prev)))
-              (when (>= window-lines-next lines-limit)
-                (setq lines-scroll (- window-lines-next lines-limit))
-                ;; Clamp lines-scroll by the window end
-                ;; Only needed when scrolling down.
-                ;;
-                ;; Do this so we don't scroll past the end.
-                (setq lines-scroll
-                  (-
-                    lines-scroll
-                    (save-excursion
-                      (goto-char (window-end))
-                      (forward-line lines-scroll)))))))
-          (t
-            (let*
+         ((eq dir 1)
+          (let* ((window-lines-prev (count-screen-lines (window-start window) point-prev t window))
+                 (window-lines-next (+ window-lines-prev lines))
+                 (lines-limit (max (/ height 2) window-lines-prev)))
+            (when (>= window-lines-next lines-limit)
+              (setq lines-scroll (- window-lines-next lines-limit))
+              ;; Clamp lines-scroll by the window end
+              ;; Only needed when scrolling down.
+              ;;
+              ;; Do this so we don't scroll past the end.
+              (setq lines-scroll
+                    (- lines-scroll
+                       (save-excursion
+                         (goto-char (window-end))
+                         (forward-line lines-scroll)))))))
+         (t
+          (let*
               ( ;; Note that we can't use `window-end' here as we may
-                ;; be scrolled past the screen end-point.
-                (window-lines-prev
-                  (- height (count-screen-lines (window-start window) point-prev t window)))
-                (window-lines-next (+ window-lines-prev lines))
-                (lines-limit (max (/ height 2) window-lines-prev)))
-              (when (>= window-lines-next lines-limit)
-                (setq lines-scroll (- lines-limit window-lines-next))
-                ;; Clamp lines-scroll by the window start
-                ;; Only needed when scrolling up.
-                ;;
-                ;; Even though scroll can't scroll past the start,
-                ;; we don't want to try to animate scrolling up in this case.
-                (setq lines-scroll
-                  (-
-                    lines-scroll
-                    (save-excursion
-                      (goto-char (window-start window))
-                      (forward-line lines-scroll))))))))
+               ;; be scrolled past the screen end-point.
+               (window-lines-prev
+                (- height
+                   (count-screen-lines (window-start window) point-prev t window)))
+               (window-lines-next (+ window-lines-prev lines))
+               (lines-limit (max (/ height 2) window-lines-prev)))
+            (when (>= window-lines-next lines-limit)
+              (setq lines-scroll (- lines-limit window-lines-next))
+              ;; Clamp lines-scroll by the window start
+              ;; Only needed when scrolling up.
+              ;;
+              ;; Even though scroll can't scroll past the start,
+              ;; we don't want to try to animate scrolling up in this case.
+              (setq lines-scroll
+                    (- lines-scroll
+                       (save-excursion
+                         (goto-char (window-start window))
+                         (forward-line lines-scroll))))))))
 
         (let ((also-move-point (not (eq (point) point-next))))
           (scroll-on-jump--scroll-impl window lines-scroll dir also-move-point)))))
@@ -442,99 +411,94 @@ Moving the point when ALSO-MOVE-POINT is set."
 ;; would involve error handling (see note below).
 (defmacro scroll-on-jump--outer-scoped-mark (point-init point-out &rest body)
   "Set POINT-INIT and store its value in POINT-OUT outside the scope of BODY."
-  `
-  (prog1
-    (save-excursion
-      (goto-char ,point-init)
-      ,@body)
-    (setq ,point-out (point))))
+  (declare (indent 2))
+  `(prog1 (save-excursion
+            (goto-char ,point-init)
+            ,@body)
+     (setq ,point-out (point))))
 
 (defmacro scroll-on-jump--inner-scoped-mark (point-init point-out &rest body)
   "Set POINT-INIT and store its value in POINT-OUT in the scope of BODY."
-  `
-  (save-excursion
-    (prog1
-      (progn
-        (goto-char ,point-init)
-        ,@body)
-      (setq ,point-out (point)))))
+  (declare (indent 2))
+  `(save-excursion
+     (prog1 (progn
+              (goto-char ,point-init)
+              ,@body)
+       (setq ,point-out (point)))))
 
 (defmacro scroll-on-jump--impl (use-window-start &rest body)
   "Main macro that wraps BODY in logic that reacts to change in `point'.
 Argument USE-WINDOW-START detects window scrolling when non-nil."
-  `
-  (let
-    ( ;; Set in case we have an error.
-      (buf (current-buffer))
-      (window (selected-window))
+  (declare (indent 1))
+  `(let
+       ( ;; Set in case we have an error.
+        (buf (current-buffer))
+        (window (selected-window))
 
-      (point-prev nil)
-      (point-next nil)
+        (point-prev nil)
+        (point-next nil)
 
-      (window-start-prev nil)
-      (window-start-next nil))
+        (window-start-prev nil)
+        (window-start-next nil))
 
-    (prog1
-      (let
-        ( ;; Postpone point-motion-hooks until later.
-          (inhibit-point-motion-hooks t)
-          (point-orig (point)))
-        ;; Note, we could catch and re-raise errors,
-        ;; this has the advantage that we could get the resulting cursor location
-        ;; even in the case of an error.
-        ;; However - this makes troubleshooting problems considerably more difficult.
-        ;; As it wont show the full back-trace, only the error message.
-        ;; So don't prioritize correct jumping in the case of errors and assume errors
-        ;; are not something that happen after cursor motion.
-        (scroll-on-jump--outer-scoped-mark point-orig point-prev
-          (scroll-on-jump--inner-scoped-mark (window-start window) window-start-prev
-            (scroll-on-jump--inner-scoped-mark point-orig point-next
-              ;; Run the main body of this macro.
-              ;; It's important the result if returned (hence the `prog1' use).
-              ,@body))))
+     (prog1 (let
+                ( ;; Postpone point-motion-hooks until later.
+                 (inhibit-point-motion-hooks t)
+                 (point-orig (point)))
+              ;; Note, we could catch and re-raise errors,
+              ;; this has the advantage that we could get the resulting cursor location
+              ;; even in the case of an error.
+              ;; However - this makes troubleshooting problems considerably more difficult.
+              ;; As it wont show the full back-trace, only the error message.
+              ;; So don't prioritize correct jumping in the case of errors and assume errors
+              ;; are not something that happen after cursor motion.
+              (scroll-on-jump--outer-scoped-mark point-orig point-prev
+                (scroll-on-jump--inner-scoped-mark (window-start window) window-start-prev
+                  (scroll-on-jump--inner-scoped-mark point-orig point-next
+                    ;; Run the main body of this macro.
+                    ;; It's important the result if returned (hence the `prog1' use).
+                    ,@body))))
 
 
-      (cond
+       (cond
         ( ;; Context changed or recursed, simply jump.
-          (not
-            (and
-              ;; Buffer/Context changed.
-              (eq buf (window-buffer window))
-              (eq buf (current-buffer))
-              (eq window (selected-window))))
+         (not
+          (and
+           ;; Buffer/Context changed.
+           (eq buf (window-buffer window))
+           (eq buf (current-buffer))
+           (eq window (selected-window))))
 
-          (goto-char point-next))
+         (goto-char point-next))
 
         (t ;; Perform animated scroll.
 
-          ;; It's possible the requested `point-next' exceeds the maximum point.
-          ;; This causes an error counting lines and calculating offsets,
-          ;; so clamp it here to avoid complications later.
-          (setq point-next (min point-next (point-max)))
+         ;; It's possible the requested `point-next' exceeds the maximum point.
+         ;; This causes an error counting lines and calculating offsets,
+         ;; so clamp it here to avoid complications later.
+         (setq point-next (min point-next (point-max)))
 
-          (cond
-            (,use-window-start
-              (setq window-start-next (window-start window))
-              (unless (eq window-start-prev window-start-next)
-                (set-window-start window window-start-prev)
-                (let
-                  (
-                    (lines-scroll
-                      (1- (count-screen-lines window-start-prev window-start-next t window)))
-                    (dir
-                      (cond
-                        ((< window-start-prev window-start-next)
-                          1)
-                        (t
-                          -1)))
-                    (also-move-point (not (eq (point) point-next))))
-                  (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
-              (prog1 (goto-char point-next)
-                (redisplay t)))
-            (t
-              (scroll-on-jump-auto-center window point-prev point-next)))
+         (cond
+          (,use-window-start
+           (setq window-start-next (window-start window))
+           (unless (eq window-start-prev window-start-next)
+             (set-window-start window window-start-prev)
+             (let ((lines-scroll
+                    (1- (count-screen-lines window-start-prev window-start-next t window)))
+                   (dir
+                    (cond
+                     ((< window-start-prev window-start-next)
+                      1)
+                     (t
+                      -1)))
+                   (also-move-point (not (eq (point) point-next))))
+               (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
+           (prog1 (goto-char point-next)
+             (redisplay t)))
+          (t
+           (scroll-on-jump-auto-center window point-prev point-next)))
 
-          (scroll-on-jump--evil-visual-mode-workaround))))))
+         (scroll-on-jump--evil-visual-mode-workaround))))))
 
 
 ;; ---------------------------------------------------------------------------
@@ -548,7 +512,9 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
 ;;;###autoload
 (defmacro scroll-on-jump (&rest body)
   "Main macro that wraps BODY in logic that reacts to change in `point'."
-  `(scroll-on-jump--impl nil ,@body))
+  (declare (indent 0))
+  `(scroll-on-jump--impl nil
+     ,@body))
 
 ;;;###autoload
 (defmacro scroll-on-jump-interactive (fn)
@@ -556,14 +522,18 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
 
 Use if you want to use `scroll-on-jump' for a single `key-binding',
 without changing behavior anywhere else."
-  `(lambda () (interactive) (scroll-on-jump (call-interactively ,fn))))
+  `(lambda ()
+     (interactive)
+     (scroll-on-jump
+       (call-interactively ,fn))))
 
 ;; Helper function (not public).
 (defun scroll-on-jump-advice--wrapper (old-fn &rest args)
   "Internal function use to advise using `scroll-on-jump-advice-add'.
 
 This calls (calling OLD-FN with ARGS)."
-  (scroll-on-jump (apply old-fn args)))
+  (scroll-on-jump
+    (apply old-fn args)))
 
 ;;;###autoload
 (defmacro scroll-on-jump-advice-add (fn)
@@ -583,7 +553,9 @@ This calls (calling OLD-FN with ARGS)."
 ;;;###autoload
 (defmacro scroll-on-jump-with-scroll (&rest body)
   "Main macro wrapping BODY, handling change `point' and vertical scroll."
-  `(scroll-on-jump--impl t ,@body))
+  (declare (indent 0))
+  `(scroll-on-jump--impl t
+     ,@body))
 
 ;;;###autoload
 (defmacro scroll-on-jump-with-scroll-interactive (fn)
@@ -591,14 +563,18 @@ This calls (calling OLD-FN with ARGS)."
 
 Use if you want to use `scroll-on-jump-with-scroll' for a single `key-binding',
 without changing behavior anywhere else."
-  `(lambda () (interactive) (scroll-on-jump-with-scroll (call-interactively ,fn))))
+  `(lambda ()
+     (interactive)
+     (scroll-on-jump-with-scroll
+       (call-interactively ,fn))))
 
 ;; Helper function (not public).
 (defun scroll-on-jump-advice--with-scroll-wrapper (old-fn &rest args)
   "Internal function use to advise using `scroll-on-jump-advice-add'.
 
 This calls OLD-FN with ARGS."
-  (scroll-on-jump-with-scroll (apply old-fn args)))
+  (scroll-on-jump-with-scroll
+    (apply old-fn args)))
 
 ;;;###autoload
 (defmacro scroll-on-jump-with-scroll-advice-remove (fn)
