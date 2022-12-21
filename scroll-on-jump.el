@@ -34,7 +34,7 @@
 
 (defcustom scroll-on-jump-duration 0.4
   "Duration (in seconds) for scrolling to the next position (zero disables)."
-  :type 'integer)
+  :type 'float)
 
 (defcustom scroll-on-jump-smooth t
   "Use smooth (pixel) scrolling, otherwise scroll by lines."
