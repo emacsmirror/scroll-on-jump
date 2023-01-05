@@ -139,9 +139,9 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   ;; the mark needs to be set to the `point'.
   ;; https://github.com/emacs-evil/evil/issues/1708
   (when (and (fboundp 'evil-visual-state-p)
-             (funcall 'evil-visual-state-p)
+             (funcall #'evil-visual-state-p)
              (fboundp 'evil-visual-type)
-             (eq (funcall 'evil-visual-type) 'line)
+             (eq (funcall #'evil-visual-type) 'line)
              (boundp 'evil-visual-point))
     (let ((mark (symbol-value 'evil-visual-point)))
       (when (markerp mark)
