@@ -163,9 +163,8 @@ Moving the point when ALSO-MOVE-POINT is set."
         ;; For motion less than a window, scale down the time allowed.
         ;; This means moving a short distance wont be given the full time.
         (time-limit
-         (*
-          scroll-on-jump-duration
-          (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
+         (* scroll-on-jump-duration
+            (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
         (use-curve scroll-on-jump-use-curve))
 
     ;; Animated scrolling (early exit on input to avoid annoying lag).
@@ -235,9 +234,8 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
         ;; For motion less than a window, scale down the time allowed.
         ;; This means moving a short distance wont be given the full time.
         (time-limit
-         (*
-          scroll-on-jump-duration
-          (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
+         (* scroll-on-jump-duration
+            (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
         (use-curve scroll-on-jump-use-curve)
         (char-height (frame-char-height (window-frame window))))
 
