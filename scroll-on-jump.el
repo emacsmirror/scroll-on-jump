@@ -376,13 +376,12 @@ Moving the point when ALSO-MOVE-POINT is set."
                          (goto-char (window-end))
                          (forward-line lines-scroll)))))))
          (t
-          (let*
-              ( ;; Note that we can't use `window-end' here as we may
-               ;; be scrolled past the screen end-point.
-               (window-lines-prev
-                (- height (count-screen-lines (window-start window) point-prev t window)))
-               (window-lines-next (+ window-lines-prev lines))
-               (lines-limit (max (/ height 2) window-lines-prev)))
+          ;; Note that we can't use `window-end' here as we may
+          ;; be scrolled past the screen end-point.
+          (let* ((window-lines-prev
+                  (- height (count-screen-lines (window-start window) point-prev t window)))
+                 (window-lines-next (+ window-lines-prev lines))
+                 (lines-limit (max (/ height 2) window-lines-prev)))
             (when (>= window-lines-next lines-limit)
               (setq lines-scroll (- lines-limit window-lines-next))
               ;; Clamp lines-scroll by the window start
@@ -429,21 +428,18 @@ Moving the point when ALSO-MOVE-POINT is set."
   "Main macro that wraps BODY in logic that reacts to change in `point'.
 Argument USE-WINDOW-START detects window scrolling when non-nil."
   (declare (indent 1))
-  `(let
-       ( ;; Set in case we have an error.
-        (buf (current-buffer))
-        (window (selected-window))
+  `(let ((buf (current-buffer)) ; Set in case we have an error.
+         (window (selected-window))
 
-        (point-prev nil)
-        (point-next nil)
+         (point-prev nil)
+         (point-next nil)
 
-        (window-start-prev nil)
-        (window-start-next nil))
+         (window-start-prev nil)
+         (window-start-next nil))
 
-     (prog1 (let
-                ( ;; Postpone point-motion-hooks until later.
-                 (inhibit-point-motion-hooks t)
-                 (point-orig (point)))
+     (prog1 (let ((point-orig (point))
+                  ;; Postpone point-motion-hooks until later.
+                  (inhibit-point-motion-hooks t))
               ;; Note, we could catch and re-raise errors,
               ;; this has the advantage that we could get the resulting cursor location
               ;; even in the case of an error.
@@ -469,7 +465,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
 
          (goto-char point-next))
 
-        (t ;; Perform animated scroll.
+        (t ; Perform animated scroll.
 
          ;; It's possible the requested `point-next' exceeds the maximum point.
          ;; This causes an error counting lines and calculating offsets,
