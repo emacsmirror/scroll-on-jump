@@ -380,8 +380,7 @@ Moving the point when ALSO-MOVE-POINT is set."
               ( ;; Note that we can't use `window-end' here as we may
                ;; be scrolled past the screen end-point.
                (window-lines-prev
-                (- height
-                   (count-screen-lines (window-start window) point-prev t window)))
+                (- height (count-screen-lines (window-start window) point-prev t window)))
                (window-lines-next (+ window-lines-prev lines))
                (lines-limit (max (/ height 2) window-lines-prev)))
             (when (>= window-lines-next lines-limit)
@@ -461,13 +460,12 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
 
 
        (cond
-        ( ;; Context changed or recursed, simply jump.
-         (not
-          (and
-           ;; Buffer/Context changed.
-           (eq buf (window-buffer window))
-           (eq buf (current-buffer))
-           (eq window (selected-window))))
+        ;; Context changed or recursed, simply jump.
+        ((not
+          ;; Check if the buffer/context changed.
+          (and (eq buf (window-buffer window))
+               (eq buf (current-buffer))
+               (eq window (selected-window))))
 
          (goto-char point-next))
 
