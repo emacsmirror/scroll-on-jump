@@ -581,5 +581,8 @@ This calls OLD-FN with ARGS."
   (advice-add fn :around #'scroll-on-jump-advice--with-scroll-wrapper))
 
 (provide 'scroll-on-jump)
-
+;; Local Variables:
+;; fill-column: 99
+;; indent-tabs-mode: nil
+;; End:
 ;;; scroll-on-jump.el ends here
