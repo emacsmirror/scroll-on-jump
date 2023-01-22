@@ -352,10 +352,11 @@ Moving the point when ALSO-MOVE-POINT is set."
    ;; No animation.
    ((zerop scroll-on-jump-duration)
     (scroll-on-jump--immediate-scroll window lines-scroll dir))
+   ;; Animated scroll.
    (scroll-on-jump-mode-line-format
-    (let ((mode-line-format scroll-on-jump-mode-line-format))
-      (scroll-on-jump--scroll-animated window lines-scroll dir also-move-point))
-    (force-mode-line-update))
+    (prog1 (let ((mode-line-format scroll-on-jump-mode-line-format))
+             (scroll-on-jump--scroll-animated window lines-scroll dir also-move-point))
+      (force-mode-line-update)))
    (t
     (scroll-on-jump--scroll-animated window lines-scroll dir also-move-point))))
 
