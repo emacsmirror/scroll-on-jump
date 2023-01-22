@@ -6,7 +6,7 @@
 ;; Author: Campbell Barton <ideasman42@gmail.com>
 
 ;; URL: https://codeberg.com/ideasman42/emacs-scroll-on-jump
-;; Version: 0.1
+;; Version: 0.2
 ;; Package-Requires: ((emacs "26.2"))
 
 ;;; Commentary:
