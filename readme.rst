@@ -166,8 +166,12 @@ While the defaults seem to work well, these values can be customized.
    The duration for jumping to take, set to ``0.0`` to jump immediately.
 ``scroll-on-jump-smooth``: t
    When not nil, use smooth scrolling (by pixels).
-``scroll-on-jump-use-curve``
+``scroll-on-jump-use-curve``: t
    Apply a curve to the scroll speed, starting and ending slow.
+``scroll-on-jump-mode-line-format``: nil
+   When non-nil, use this value for the ``mode-line-format`` while scrolling.
+   This can be used to temporarily override the mode-line while scrolling.
+   It can also help to avoid overly complex mode-lines from slowing down scrolling.
 
 
 Installation

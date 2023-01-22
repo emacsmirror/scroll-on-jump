@@ -44,6 +44,12 @@
   "Apply a curve to the scroll speed, starting and ending slow."
   :type 'boolean)
 
+(defcustom scroll-on-jump-mode-line-format nil
+  "The `mode-line-format' to use or nil to leave the `mode-line-format' unchanged.
+
+This can be useful to use a simplified or event disabling the mode-line
+while scrolling, as a complex mode-line can interfere with smooth scrolling."
+  :type '(choice (const nil) string))
 
 ;; ---------------------------------------------------------------------------
 ;; Generic Utilities
@@ -321,14 +327,10 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
 
   (run-window-scroll-functions window))
 
-(defun scroll-on-jump--scroll-impl (window lines-scroll dir also-move-point)
-  "Scroll WINDOW LINES-SCROLL lines along DIR direction.
-Moving the point when ALSO-MOVE-POINT is set."
-
+(defun scroll-on-jump--scroll-animated (window lines-scroll dir also-move-point)
+  "Perform an animated scroll.
+see `scroll-on-jump--scroll-impl' for doc-strings for WINDOW, LINES-SCROLL, DIR & ALSO-MOVE-POINT."
   (cond
-   ;; No animation.
-   ((zerop scroll-on-jump-duration)
-    (scroll-on-jump--immediate-scroll window lines-scroll dir))
    ;; Use pixel scrolling.
    ;;
    ;; NOTE: only pixel scroll >1 lines so actions that move the cursor up/down one
@@ -342,6 +344,20 @@ Moving the point when ALSO-MOVE-POINT is set."
    ;; Use line scrolling.
    (t
     (scroll-on-jump--animated-scroll-by-line window lines-scroll dir also-move-point))))
+
+(defun scroll-on-jump--scroll-impl (window lines-scroll dir also-move-point)
+  "Scroll WINDOW LINES-SCROLL lines along DIR direction.
+Moving the point when ALSO-MOVE-POINT is set."
+  (cond
+   ;; No animation.
+   ((zerop scroll-on-jump-duration)
+    (scroll-on-jump--immediate-scroll window lines-scroll dir))
+   (scroll-on-jump-mode-line-format
+    (let ((mode-line-format scroll-on-jump-mode-line-format))
+      (scroll-on-jump--scroll-animated window lines-scroll dir also-move-point))
+    (force-mode-line-update))
+   (t
+    (scroll-on-jump--scroll-animated window lines-scroll dir also-move-point))))
 
 (defun scroll-on-jump-auto-center (window point-prev point-next)
   "Re-frame WINDOW from POINT-PREV to POINT-NEXT, optionally animating."
