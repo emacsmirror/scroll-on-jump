@@ -265,7 +265,9 @@ Moving the point when ALSO-MOVE-POINT is set."
             ;; the caller moves the point to the final location.
             (when (< lines-done-abs lines-scroll-abs)
               ;; Force `redisplay', without this redrawing can be a little choppy.
-              (redisplay t)))
+              (redisplay t)
+              ;; FIXME: for some reason a short sleep is needed to prevent choppy scrolling.
+              (sit-for 0.01)))
           (setq is-early-exit nil))
 
         ;; Re-enable when editing logic.
@@ -344,7 +346,10 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
             ;; the caller moves the point to the final location.
             (when (< px-done-abs px-scroll-abs)
               ;; Force `redisplay', without this redrawing can be a little choppy.
-              (redisplay t)))
+              (goto-char (1+ (point)))
+              (redisplay t)
+              ;; FIXME: for some reason a short sleep is needed to prevent choppy scrolling.
+              (sit-for 0.01)))
           (setq is-early-exit nil))
 
         (cond
