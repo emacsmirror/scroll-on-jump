@@ -3,6 +3,9 @@
 Change Log
 ##########
 
+  - Add ``scroll-on-jump-curve`` & ``scroll-on-jump-curve-power``
+    to support different kinds of curves & control their strength.
+
 - Version 0.2 (2023-01-22)
 
   - Add ``scroll-on-jump-mode-line-format`` to support overriding the mode-line while scrolling.

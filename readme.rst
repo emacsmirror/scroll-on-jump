@@ -162,13 +162,25 @@ Customization
 
 While the defaults seem to work well, these values can be customized.
 
-``scroll-on-jump-duration``: 0.4
+``scroll-on-jump-duration``: ``0.4``
    The duration for jumping to take, set to ``0.0`` to jump immediately.
-``scroll-on-jump-smooth``: t
+``scroll-on-jump-smooth``: ``t``
    When not nil, use smooth scrolling (by pixels).
-``scroll-on-jump-use-curve``: t
+``scroll-on-jump-curve``: ``'smooth``
    Apply a curve to the scroll speed, starting and ending slow.
-``scroll-on-jump-mode-line-format``: nil
+
+   :'smooth: Ease in/out.
+   :'smooth-in: Ease in (end slow).
+   :'smooth-out: Ease in (start slow).
+   :'linear: Linear motion (no easing).
+``scroll-on-jump-curve-power``: ``3.0``
+   The strength of the curve (when non-linear).
+
+   Values between 2 and 8 work well.
+
+   - Below 2.0 approaches a linear curve.
+   - Above 8.0 can make the motion overly abrupt.
+``scroll-on-jump-mode-line-format``: ``nil``
    When non-nil, use this value for the ``mode-line-format`` while scrolling.
    This can be used to temporarily override the mode-line while scrolling.
    It can also help to avoid overly complex mode-lines from slowing down scrolling.
