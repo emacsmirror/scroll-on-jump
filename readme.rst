@@ -163,9 +163,9 @@ Customization
 While the defaults seem to work well, these values can be customized.
 
 ``scroll-on-jump-duration``: ``0.4``
-   The duration for jumping to take, set to ``0.0`` to jump immediately.
+   The duration (in seconds) for jumping to take, set to ``0.0`` to jump immediately.
 ``scroll-on-jump-smooth``: ``t``
-   When not nil, use smooth scrolling (by pixels).
+   When not nil, use smooth scrolling (by pixels), otherwise scroll by lines.
 ``scroll-on-jump-curve``: ``'smooth``
    Apply a curve to the scroll speed, starting and ending slow.
 
