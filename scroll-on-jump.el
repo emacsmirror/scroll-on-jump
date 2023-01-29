@@ -226,7 +226,9 @@ Moving the point when ALSO-MOVE-POINT is set."
         (time-limit
          (* scroll-on-jump-duration
             (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
-        (interp-fn (scroll-on-jump--interp-fn-get scroll-on-jump-curve)))
+        (interp-fn (scroll-on-jump--interp-fn-get scroll-on-jump-curve))
+        ;; FIXME: for some reason a short sleep is needed to prevent choppy scrolling.
+        (use-pgtk-workaround (eq (window-system) 'pgtk)))
 
     ;; Animated scrolling (early exit on input to avoid annoying lag).
     (cond
@@ -266,8 +268,8 @@ Moving the point when ALSO-MOVE-POINT is set."
             (when (< lines-done-abs lines-scroll-abs)
               ;; Force `redisplay', without this redrawing can be a little choppy.
               (redisplay t)
-              ;; FIXME: for some reason a short sleep is needed to prevent choppy scrolling.
-              (sit-for 0.01)))
+              (when use-pgtk-workaround
+                (sit-for 0.01))))
           (setq is-early-exit nil))
 
         ;; Re-enable when editing logic.
@@ -294,7 +296,9 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
          (* scroll-on-jump-duration
             (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
         (interp-fn (scroll-on-jump--interp-fn-get scroll-on-jump-curve))
-        (char-height (frame-char-height (window-frame window))))
+        (char-height (frame-char-height (window-frame window)))
+        ;; FIXME: for some reason a short sleep is needed to prevent choppy scrolling.
+        (use-pgtk-workaround (eq (window-system) 'pgtk)))
 
     ;; Animated scrolling (early exit on input to avoid annoying lag).
     (cond
@@ -347,8 +351,8 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
             (when (< px-done-abs px-scroll-abs)
               ;; Force `redisplay', without this redrawing can be a little choppy.
               (redisplay t)
-              ;; FIXME: for some reason a short sleep is needed to prevent choppy scrolling.
-              (sit-for 0.01)))
+              (when use-pgtk-workaround
+                (sit-for 0.01))))
           (setq is-early-exit nil))
 
         (cond
