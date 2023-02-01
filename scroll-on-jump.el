@@ -43,11 +43,10 @@
 (defcustom scroll-on-jump-curve 'smooth
   "The the method scrolling is calculated."
   :type
-  '(choice
-    (const :tag "Smooth in/out, starts & ends slow" smooth)
-    (const :tag "Smooth in, starts slow" smooth-in)
-    (const :tag "Smooth out, ends slow" smooth-out)
-    (const :tag "Linear" linear)))
+  '(choice (const :tag "Smooth in/out, starts & ends slow" smooth)
+           (const :tag "Smooth in, starts slow" smooth-in)
+           (const :tag "Smooth out, ends slow" smooth-out)
+           (const :tag "Linear" linear)))
 
 (defcustom scroll-on-jump-curve-power 3.0
   "The strength of the curve (when set to linear).
@@ -650,5 +649,6 @@ This calls OLD-FN with ARGS."
 ;; Local Variables:
 ;; fill-column: 99
 ;; indent-tabs-mode: nil
+;; elisp-autofmt-format-quoted: nil
 ;; End:
 ;;; scroll-on-jump.el ends here
