@@ -154,7 +154,7 @@ Here is a more complete example for evil-mode users.
      (scroll-on-jump-advice-add goto-last-change-reverse))
 
    (global-set-key (kbd "<C-M-next>") (scroll-on-jump-interactive 'diff-hl-next-hunk))
-   (global-set-key (kbd "<C-M-prior>") (scroll-on-jump-interactive 'diff-hl-previous-hunk)))
+   (global-set-key (kbd "<C-M-prior>") (scroll-on-jump-interactive 'diff-hl-previous-hunk))
 
 
 Customization
