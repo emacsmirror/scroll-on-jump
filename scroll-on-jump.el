@@ -67,6 +67,7 @@ while scrolling, as a complex mode-line can interfere with smooth scrolling."
   "A simple version of `scroll-on-jump--scroll-by-lines'.
 
 Move LINES in WINDOW, when ALSO-MOVE-POINT is set, the point is moved too."
+  (declare (important-return-value nil))
   (when also-move-point
     (forward-line lines))
   (set-window-start window
@@ -83,6 +84,7 @@ Move LINES in WINDOW, when ALSO-MOVE-POINT is set, the point is moved too."
 Argument WINDOW The window to scroll.
 Argument LINES The number of lines to scroll (signed).
 Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
+  (declare (important-return-value t))
   (let ((lines-remainder 0))
     (when also-move-point
       (let ((lines-point-remainder (forward-line lines)))
@@ -109,6 +111,7 @@ Argument WINDOW The window to scroll.
 Argument CHAR-HEIGHT The result of `frame-char-height'.
 Argument DELTA-PX The number of pixels to scroll (signed).
 Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
+  (declare (important-return-value nil))
   (cond
    ((< delta-px 0)
     (let* ((scroll-px-prev (window-vscroll nil t))
@@ -168,19 +171,23 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
 (defun scroll-on-jump--interp-linear (a b factor)
   "Blend FACTOR between A and B using linear curvature."
+  (declare (important-return-value t))
   (scroll-on-jump--interp-linear-impl a b factor))
 
 (defun scroll-on-jump--interp-ease-in (a b factor)
   "Blend FACTOR between A and B using ease-in curvature."
+  (declare (important-return-value t))
   (scroll-on-jump--interp-linear-impl a b (expt factor scroll-on-jump-curve-power)))
 
 (defun scroll-on-jump--interp-ease-out (a b factor)
   "Blend FACTOR between A and B using ease-in curvature."
+  (declare (important-return-value t))
   (scroll-on-jump--interp-linear-impl
    a b (- 1.0 (expt (- 1.0 factor) scroll-on-jump-curve-power))))
 
 (defun scroll-on-jump--interp-ease-in-out (a b factor)
   "Blend FACTOR between A and B using ease-in-out curvature."
+  (declare (important-return-value t))
   (cond
    ((< factor 0.5)
     (let ((f (* (expt (* factor 2.0) scroll-on-jump-curve-power) 0.5)))
@@ -191,6 +198,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
 (defun scroll-on-jump--interp-fn-get (curve)
   "Return the interpolation function associated with CURVE."
+  (declare (important-return-value t))
   (cond
    ((<= scroll-on-jump-curve-power 1.0)
     ;; A curve of 1.0 is linear by definition,
@@ -214,11 +222,13 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
 (defun scroll-on-jump--immediate-scroll (window lines-scroll _dir)
   "Non animated scroll for WINDOW to move LINES-SCROLL."
+  (declare (important-return-value nil))
   (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))
 
 (defun scroll-on-jump--animated-scroll-by-line (window lines-scroll dir also-move-point)
   "Animated scroll WINDOW LINES-SCROLL lines along DIR direction.
 Moving the point when ALSO-MOVE-POINT is set."
+  (declare (important-return-value nil))
   (let ((time-init (current-time))
         ;; For motion less than a window, scale down the time allowed.
         ;; This means moving a short distance wont be given the full time.
@@ -288,6 +298,7 @@ Moving the point when ALSO-MOVE-POINT is set."
 (defun scroll-on-jump--animated-scroll-by-px (window lines-scroll dir also-move-point)
   "Animated scroll WINDOW LINES-SCROLL lines along DIR direction.
 Argument ALSO-MOVE-POINT moves the point while scrolling."
+  (declare (important-return-value nil))
   (let ((time-init (current-time))
         ;; For motion less than a window, scale down the time allowed.
         ;; This means moving a short distance wont be given the full time.
@@ -380,6 +391,7 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
 (defun scroll-on-jump--scroll-animated (window lines-scroll dir also-move-point)
   "Perform an animated scroll.
 see `scroll-on-jump--scroll-impl' for doc-strings for WINDOW, LINES-SCROLL, DIR & ALSO-MOVE-POINT."
+  (declare (important-return-value nil))
   (cond
    ;; Use pixel scrolling.
    ;;
@@ -398,6 +410,7 @@ see `scroll-on-jump--scroll-impl' for doc-strings for WINDOW, LINES-SCROLL, DIR 
 (defun scroll-on-jump--scroll-impl (window lines-scroll dir also-move-point)
   "Scroll WINDOW LINES-SCROLL lines along DIR direction.
 Moving the point when ALSO-MOVE-POINT is set."
+  (declare (important-return-value nil))
   (cond
    ;; No animation.
    ((zerop scroll-on-jump-duration)
@@ -412,6 +425,7 @@ Moving the point when ALSO-MOVE-POINT is set."
 
 (defun scroll-on-jump-auto-center (window point-prev point-next)
   "Re-frame WINDOW from POINT-PREV to POINT-NEXT, optionally animating."
+  (declare (important-return-value nil))
   ;; Count lines, excluding the current line.
   (let ((lines (1- (count-screen-lines point-prev point-next t window))))
     (when (> lines 0)
@@ -591,6 +605,7 @@ without changing behavior anywhere else."
   "Internal function use to advise using `scroll-on-jump-advice-add'.
 
 This calls (calling OLD-FN with ARGS)."
+  (declare (important-return-value nil))
   (scroll-on-jump
     (apply old-fn args)))
 
@@ -632,6 +647,7 @@ without changing behavior anywhere else."
   "Internal function use to advise using `scroll-on-jump-advice-add'.
 
 This calls OLD-FN with ARGS."
+  (declare (important-return-value nil))
   (scroll-on-jump-with-scroll
     (apply old-fn args)))
 
