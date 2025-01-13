@@ -3,6 +3,8 @@
 Change Log
 ##########
 
+  - Prevent the active-region from displaying while moving the point
+    to prevent the display from flickering.
   - Add ``scroll-on-jump-curve`` & ``scroll-on-jump-curve-power``
     to support different kinds of curves & control their strength.
 
