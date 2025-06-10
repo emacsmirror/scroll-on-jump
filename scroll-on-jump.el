@@ -171,7 +171,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
       (set-marker m (point)))))
 
 (defmacro scroll-on-jump--save-mark-conditionally (test-condition &rest body)
-  "Run BODY restoring the mark to it's original location."
+  "Run BODY, restoring the marks original location when TEST-CONDITION is non-nil."
   ;; NOTE: it's assumed the buffer will not be modified.
   (declare (indent 1))
   (let ((mk-pos (gensym "mk-pos")))
@@ -571,6 +571,8 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
                     ;; It's important the result if returned (hence the `prog1' use).
                     ,@body))))
 
+       ;; Quiet unused argument warning.
+       (ignore point-prev)
 
        (cond
         ;; Context changed or recursed, simply jump.
