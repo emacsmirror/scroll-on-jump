@@ -283,7 +283,7 @@ Moving the point when ALSO-MOVE-POINT is set."
                     (step
                      (let* ((time-elapsed (float-time (time-subtract (current-time) time-init)))
                             (factor (min 1.0 (/ time-elapsed time-limit)))
-                            (lines-target (floor (funcall interp-fn 0.0 lines-scroll-abs factor)))
+                            (lines-target (round (funcall interp-fn 0.0 lines-scroll-abs factor)))
                             (lines-remainder (- lines-target lines-done-abs)))
                        ;; Step result, we must move at least one line.
                        (* dir (max 1 lines-remainder)))))
@@ -371,7 +371,7 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
                     (step
                      (let* ((time-elapsed (float-time (time-subtract (current-time) time-init)))
                             (factor (min 1.0 (/ time-elapsed time-limit)))
-                            (px-target (floor (funcall interp-fn 0.0 px-scroll-abs factor)))
+                            (px-target (round (funcall interp-fn 0.0 px-scroll-abs factor)))
                             (px-remainder (- px-target px-done-abs)))
                        (* dir px-remainder))))
 
