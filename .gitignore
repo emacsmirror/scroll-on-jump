@@ -1,0 +1,6 @@
+# Emacs bytecode.
+*.elc
+
+# ELPA-generated files.
+/scroll-on-jump-autoloads.el
+/scroll-on-jump-pkg.el
