@@ -81,13 +81,13 @@ Before:
 
 .. code-block:: elisp
 
-   (global-set-key (kbd "<C-z>") 'undo)
+   (global-set-key (kbd "<C-z>") #'undo)
 
 After:
 
 .. code-block:: elisp
 
-   (global-set-key (kbd "<C-z>") (scroll-on-jump-interactive 'undo))
+   (global-set-key (kbd "<C-z>") (scroll-on-jump-interactive #'undo))
 
 
 Advice Example

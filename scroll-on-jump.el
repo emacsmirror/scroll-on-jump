@@ -173,7 +173,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 (defmacro scroll-on-jump--save-mark-conditionally (test-condition &rest body)
   "Run BODY, restoring the marks original location when TEST-CONDITION is non-nil."
   ;; NOTE: it's assumed the buffer will not be modified.
-  (declare (indent 1))
+  (declare (indent 1) (debug t))
   (let ((mk-pos (gensym "mk-pos")))
     `(let ((,mk-pos
             (and ,test-condition
@@ -181,7 +181,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
                    (and mk (marker-position mk))))))
        (prog1 (progn
                 ,@body)
-         ;; Unlikely but possible the marker no longer exists.
+         ;; Unlikely but possible the mark no longer exists.
          (when ,mk-pos
            (let ((mk (mark-marker)))
              (when mk
@@ -269,7 +269,6 @@ Moving the point when ALSO-MOVE-POINT is set."
     (cond
      ((not (zerop lines-scroll))
       (let ((is-early-exit t)
-            (inhibit-point-motion-hooks t)
             (lines-done-abs 0)
             (lines-scroll-abs (abs lines-scroll))
             (also-move-mark (and also-move-point (region-active-p))))
@@ -346,7 +345,6 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
     (cond
      ((not (zerop lines-scroll))
       (let ((is-early-exit t)
-            (inhibit-point-motion-hooks t)
             (px-done-abs 0)
             (px-scroll-abs (abs (* lines-scroll char-height)))
             (px-scroll (* lines-scroll char-height))
@@ -526,7 +524,7 @@ Moving the point when ALSO-MOVE-POINT is set."
 ;; would involve error handling (see note below).
 (defmacro scroll-on-jump--outer-scoped-mark (point-init point-out &rest body)
   "Set POINT-INIT and store its value in POINT-OUT outside the scope of BODY."
-  (declare (indent 2))
+  (declare (indent 2) (debug (form symbolp body)))
   `(prog1 (save-excursion
             (goto-char ,point-init)
             ,@body)
@@ -534,84 +532,81 @@ Moving the point when ALSO-MOVE-POINT is set."
 
 (defmacro scroll-on-jump--inner-scoped-mark (point-init point-out &rest body)
   "Set POINT-INIT and store its value in POINT-OUT in the scope of BODY."
-  (declare (indent 2))
+  (declare (indent 2) (debug (form symbolp body)))
   `(save-excursion
      (prog1 (progn
               (goto-char ,point-init)
               ,@body)
        (setq ,point-out (point)))))
 
-(defmacro scroll-on-jump--impl (use-window-start &rest body)
-  "Main macro that wraps BODY in logic that reacts to change in `point'.
+(defun scroll-on-jump--impl (use-window-start body-fun)
+  "Main macro that wraps BODY-FUN in logic that reacts to change in `point'.
 Argument USE-WINDOW-START detects window scrolling when non-nil."
-  (declare (indent 1))
-  `(let ((buf (current-buffer)) ; Set in case we have an error.
-         (window (selected-window))
+  (let ((buf (current-buffer)) ; Set in case we have an error.
+        (window (selected-window))
 
-         (point-prev nil)
-         (point-next nil)
+        (point-prev nil)
+        (point-next nil)
 
-         (window-start-prev nil)
-         (window-start-next nil))
+        (window-start-prev nil)
+        (window-start-next nil))
 
-     (prog1 (let ((point-orig (point))
-                  ;; Postpone point-motion-hooks until later.
-                  (inhibit-point-motion-hooks t))
-              ;; Note, we could catch and re-raise errors,
-              ;; this has the advantage that we could get the resulting cursor location
-              ;; even in the case of an error.
-              ;; However - this makes troubleshooting problems considerably more difficult.
-              ;; As it wont show the full back-trace, only the error message.
-              ;; So don't prioritize correct jumping in the case of errors and assume errors
-              ;; are not something that happen after cursor motion.
-              (scroll-on-jump--outer-scoped-mark point-orig point-prev
-                (scroll-on-jump--inner-scoped-mark (window-start window) window-start-prev
-                  (scroll-on-jump--inner-scoped-mark point-orig point-next
-                    ;; Run the main body of this macro.
-                    ;; It's important the result if returned (hence the `prog1' use).
-                    ,@body))))
+    (prog1 (let ((point-orig (point)))
+             ;; Note, we could catch and re-raise errors,
+             ;; this has the advantage that we could get the resulting cursor location
+             ;; even in the case of an error.
+             ;; However - this makes troubleshooting problems considerably more difficult.
+             ;; As it wont show the full back-trace, only the error message.
+             ;; So don't prioritize correct jumping in the case of errors and assume errors
+             ;; are not something that happen after cursor motion.
+             (scroll-on-jump--outer-scoped-mark point-orig point-prev
+               (scroll-on-jump--inner-scoped-mark (window-start window) window-start-prev
+                 (scroll-on-jump--inner-scoped-mark point-orig point-next
+                   ;; Run the main body of this function.
+                   ;; It's important the result if returned (hence the `prog1' use).
+                   (funcall body-fun)))))
 
-       ;; Quiet unused argument warning.
-       (ignore point-prev)
+      ;; Quiet unused argument warning.
+      (ignore point-prev)
 
-       (cond
-        ;; Context changed or recursed, simply jump.
-        ((not
-          ;; Check if the buffer/context changed.
-          (and (eq buf (window-buffer window))
-               (eq buf (current-buffer))
-               (eq window (selected-window))))
+      (cond
+       ;; Context changed or recursed, simply jump.
+       ((not
+         ;; Check if the buffer/context changed.
+         (and (eq buf (window-buffer window))
+              (eq buf (current-buffer))
+              (eq window (selected-window))))
 
-         (goto-char point-next))
+        (goto-char point-next))
 
-        (t ; Perform animated scroll.
+       (t ; Perform animated scroll.
 
-         ;; It's possible the requested `point-next' exceeds the maximum point.
-         ;; This causes an error counting lines and calculating offsets,
-         ;; so clamp it here to avoid complications later.
-         (setq point-next (min point-next (point-max)))
+        ;; It's possible the requested `point-next' exceeds the maximum point.
+        ;; This causes an error counting lines and calculating offsets,
+        ;; so clamp it here to avoid complications later.
+        (setq point-next (min point-next (point-max)))
 
-         (cond
-          (,use-window-start
-           (setq window-start-next (window-start window))
-           (unless (eq window-start-prev window-start-next)
-             (set-window-start window window-start-prev)
-             (let ((lines-scroll
-                    (1- (count-screen-lines window-start-prev window-start-next t window)))
-                   (dir
-                    (cond
-                     ((< window-start-prev window-start-next)
-                      1)
-                     (t
-                      -1)))
-                   (also-move-point (not (eq (point) point-next))))
-               (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
-           (prog1 (goto-char point-next)
-             (redisplay t)))
-          (t
-           (scroll-on-jump-auto-center window point-prev point-next)))
+        (cond
+         (use-window-start
+          (setq window-start-next (window-start window))
+          (unless (eq window-start-prev window-start-next)
+            (set-window-start window window-start-prev)
+            (let ((lines-scroll
+                   (1- (count-screen-lines window-start-prev window-start-next t window)))
+                  (dir
+                   (cond
+                    ((< window-start-prev window-start-next)
+                     1)
+                    (t
+                     -1)))
+                  (also-move-point (not (eq (point) point-next))))
+              (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
+          (prog1 (goto-char point-next)
+            (redisplay t)))
+         (t
+          (scroll-on-jump-auto-center window point-prev point-next)))
 
-         (scroll-on-jump--evil-visual-mode-workaround))))))
+        (scroll-on-jump--evil-visual-mode-workaround))))))
 
 
 ;; ---------------------------------------------------------------------------
@@ -625,20 +620,19 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
 ;;;###autoload
 (defmacro scroll-on-jump (&rest body)
   "Main macro that wraps BODY in logic that reacts to change in `point'."
-  (declare (indent 0))
-  `(scroll-on-jump--impl nil
-     ,@body))
+  (declare (indent 0) (debug t))
+  `(scroll-on-jump--impl nil (lambda () ,@body)))
 
 ;;;###autoload
-(defmacro scroll-on-jump-interactive (fn)
+(defun scroll-on-jump-interactive (fn)
   "Macro that wraps interactive call to function FN.
 
 Use if you want to use `scroll-on-jump' for a single `key-binding',
 without changing behavior anywhere else."
-  `(lambda ()
-     (interactive)
-     (scroll-on-jump
-       (call-interactively ,fn))))
+  (lambda ()
+    (interactive)
+    (scroll-on-jump
+      (call-interactively fn))))
 
 ;; Helper function (not public).
 (defun scroll-on-jump-advice--wrapper (old-fn &rest args)
@@ -667,20 +661,19 @@ This calls (calling OLD-FN with ARGS)."
 ;;;###autoload
 (defmacro scroll-on-jump-with-scroll (&rest body)
   "Main macro wrapping BODY, handling change `point' and vertical scroll."
-  (declare (indent 0))
-  `(scroll-on-jump--impl t
-     ,@body))
+  (declare (indent 0) (debug t))
+  `(scroll-on-jump--impl t (lambda () ,@body)))
 
 ;;;###autoload
-(defmacro scroll-on-jump-with-scroll-interactive (fn)
+(defun scroll-on-jump-with-scroll-interactive (fn)
   "Macro that wraps interactive call to function FN.
 
 Use if you want to use `scroll-on-jump-with-scroll' for a single `key-binding',
 without changing behavior anywhere else."
-  `(lambda ()
-     (interactive)
-     (scroll-on-jump-with-scroll
-       (call-interactively ,fn))))
+  (lambda ()
+    (interactive)
+    (scroll-on-jump-with-scroll
+      (call-interactively fn))))
 
 ;; Helper function (not public).
 (defun scroll-on-jump-advice--with-scroll-wrapper (old-fn &rest args)
