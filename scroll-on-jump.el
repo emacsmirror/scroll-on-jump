@@ -539,8 +539,8 @@ Moving the point when ALSO-MOVE-POINT is set."
               ,@body)
        (setq ,point-out (point)))))
 
-(defun scroll-on-jump--impl (use-window-start body-fun)
-  "Main macro that wraps BODY-FUN in logic that reacts to change in `point'.
+(defun scroll-on-jump--impl (use-window-start body-fn)
+  "Main macro that wraps BODY-FN in logic that reacts to change in `point'.
 Argument USE-WINDOW-START detects window scrolling when non-nil."
   (let ((buf (current-buffer)) ; Set in case we have an error.
         (window (selected-window))
@@ -564,7 +564,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
                  (scroll-on-jump--inner-scoped-mark point-orig point-next
                    ;; Run the main body of this function.
                    ;; It's important the result if returned (hence the `prog1' use).
-                   (funcall body-fun)))))
+                   (funcall body-fn)))))
 
       ;; Quiet unused argument warning.
       (ignore point-prev)
