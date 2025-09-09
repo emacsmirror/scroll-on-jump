@@ -89,7 +89,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
     (when also-move-point
       (let ((lines-point-remainder (forward-line lines)))
         (unless (zerop lines-point-remainder)
-          (setq lines (- lines lines-point-remainder)))))
+          (decf lines lines-point-remainder))))
     (unless (zerop lines)
       (set-window-start window
                         (save-excursion
@@ -121,8 +121,8 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
            (lines-remainder 0))
 
       (when (< scroll-px 0)
-        (setq lines (1- lines))
-        (setq scroll-px (+ char-height scroll-px)))
+        (decf lines)
+        (incf scroll-px char-height))
 
       (unless (zerop lines)
         (setq lines-remainder (- (scroll-on-jump--scroll-by-lines window lines also-move-point)))
@@ -288,9 +288,9 @@ Moving the point when ALSO-MOVE-POINT is set."
                        (* dir (max 1 lines-remainder)))))
 
                 ;; Check if this is the last step.
-                (setq lines-done-abs (+ lines-done-abs (abs step)))
+                (incf lines-done-abs (abs step))
                 (when (> lines-done-abs lines-scroll-abs)
-                  (setq step (- step (* dir (- lines-done-abs lines-scroll-abs)))))
+                  (decf step (* dir (- lines-done-abs lines-scroll-abs))))
 
                 ;; Faster alternative to scroll.
                 (scroll-on-jump--scroll-by-lines-simple window step nil)
@@ -300,7 +300,7 @@ Moving the point when ALSO-MOVE-POINT is set."
                   (when also-move-mark
                     (scroll-on-jump--set-mark-from-point)))
 
-                (setq lines-scroll (- lines-scroll step)))
+                (decf lines-scroll step))
 
               ;; Skip the last redraw, so there isn't 2x update when
               ;; the caller moves the point to the final location.
@@ -374,9 +374,9 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
                        (* dir px-remainder))))
 
                 ;; Check if this is the last step.
-                (setq px-done-abs (+ px-done-abs (abs step)))
+                (incf px-done-abs (abs step))
                 (when (> px-done-abs px-scroll-abs)
-                  (setq step (- step (* dir (- px-done-abs px-scroll-abs)))))
+                  (decf step (* dir (- px-done-abs px-scroll-abs))))
 
                 (pcase-let ((`(,_lines-remainder . ,lines-handled)
                              (scroll-on-jump--scroll-by-pixels window char-height step nil)))
@@ -388,9 +388,9 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
                     (when also-move-mark
                       (scroll-on-jump--set-mark-from-point)))
 
-                  (setq lines-scroll (- lines-scroll lines-handled)))
+                  (decf lines-scroll lines-handled))
 
-                (setq px-scroll (- px-scroll step)))
+                (decf px-scroll step))
 
               ;; Skip the last redraw, so there isn't 2x update when
               ;; the caller moves the point to the final location.
