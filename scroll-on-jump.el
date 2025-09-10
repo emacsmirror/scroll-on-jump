@@ -26,6 +26,22 @@
 
 
 ;; ---------------------------------------------------------------------------
+;; Compatibility
+
+(when (and (version< emacs-version "31.1") (not (and (fboundp 'incf) (fboundp 'decf))))
+  (defmacro incf (place &optional delta)
+    "Increment PLACE by DELTA or 1."
+    (declare (debug (gv-place &optional form)))
+    (gv-letplace (getter setter) place
+      (funcall setter `(+ ,getter ,(or delta 1)))))
+  (defmacro decf (place &optional delta)
+    "Decrement PLACE by DELTA or 1."
+    (declare (debug (gv-place &optional form)))
+    (gv-letplace (getter setter) place
+      (funcall setter `(- ,getter ,(or delta 1))))))
+
+
+;; ---------------------------------------------------------------------------
 ;; Custom Variables
 
 (defgroup scroll-on-jump nil
@@ -59,6 +75,7 @@ A value of 1.0 is linear, values between 2 and 8 work well."
 This can be useful to use a simplified or event disabling the mode-line
 while scrolling, as a complex mode-line can interfere with smooth scrolling."
   :type '(choice (const nil) string))
+
 
 ;; ---------------------------------------------------------------------------
 ;; Generic Utilities
