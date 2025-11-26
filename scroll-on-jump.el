@@ -285,7 +285,7 @@ Moving the point when ALSO-MOVE-POINT is set."
 
     ;; Animated scrolling (early exit on input to avoid annoying lag).
     (cond
-     ((not (zerop lines-scroll))
+     ((null (zerop lines-scroll))
       (let ((is-early-exit t)
             (lines-done-abs 0)
             (lines-scroll-abs (abs lines-scroll))
@@ -330,7 +330,7 @@ Moving the point when ALSO-MOVE-POINT is set."
             (setq is-early-exit nil)))
 
         ;; Re-enable when editing logic.
-        (when (and (null is-early-exit) (not (zerop lines-scroll)))
+        (when (and (null is-early-exit) (null (zerop lines-scroll)))
           (error "Internal error, 'lines-scroll' should be zero"))
 
         ;; If we exit early because of input.
@@ -361,7 +361,7 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
 
     ;; Animated scrolling (early exit on input to avoid annoying lag).
     (cond
-     ((not (zerop lines-scroll))
+     ((null (zerop lines-scroll))
       (let ((is-early-exit t)
             (px-done-abs 0)
             (px-scroll-abs (abs (* lines-scroll char-height)))
@@ -427,12 +427,12 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
             (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))
 
            ;; Sanity check, if this fails there is an issue with internal logic.
-           ((not (zerop px-scroll))
+           ((null (zerop px-scroll))
             (set-window-vscroll window 0 t)
             (error "Internal error, 'px-scroll' should be zero"))
 
            ;; Also should never happen.
-           ((not (zerop (window-vscroll window t)))
+           ((null (zerop (window-vscroll window t)))
             (set-window-vscroll window 0 t)
             (message "Warning, sub-pixel scroll left set!"))))))
 
@@ -528,7 +528,7 @@ Moving the point when ALSO-MOVE-POINT is set."
                          (goto-char (window-start window))
                          (forward-line lines-scroll))))))))
 
-        (let ((also-move-point (not (eq (point) point-next))))
+        (let ((also-move-point (null (eq (point) point-next))))
           (scroll-on-jump--scroll-impl window lines-scroll dir also-move-point)))))
 
   (goto-char point-next))
@@ -589,7 +589,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
 
       (cond
        ;; Context changed or recursed, simply jump.
-       ((not
+       ((null
          ;; Check if the buffer/context changed.
          (and (eq buf (window-buffer window))
               (eq buf (current-buffer))
@@ -617,7 +617,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
                      1)
                     (t
                      -1)))
-                  (also-move-point (not (eq (point) point-next))))
+                  (also-move-point (null (eq (point) point-next))))
               (scroll-on-jump--scroll-impl window (* dir lines-scroll) dir also-move-point)))
           (prog1 (goto-char point-next)
             (redisplay t)))
