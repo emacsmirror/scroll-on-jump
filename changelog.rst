@@ -3,6 +3,9 @@
 Change Log
 ##########
 
+- Version 0.3 (2025-11-30)
+
+  - Fix #28: scroll taking longer than the "duration" especially when scrolling longer distances.
   - Prevent the active-region from displaying while moving the point
     to prevent the display from flickering.
   - Add ``scroll-on-jump-curve`` & ``scroll-on-jump-curve-power``
