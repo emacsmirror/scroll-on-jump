@@ -58,7 +58,7 @@
   :type 'boolean)
 
 (defcustom scroll-on-jump-curve 'smooth
-  "The the method scrolling is calculated."
+  "The method for calculating scrolling speed."
   :type
   '(choice (const :tag "Smooth in/out, starts & ends slow" smooth)
            (const :tag "Smooth in, starts slow" smooth-in)
@@ -66,16 +66,16 @@
            (const :tag "Linear" linear)))
 
 (defcustom scroll-on-jump-curve-power 3.0
-  "The strength of the curve (when set to linear).
+  "The strength of the curve (ignored when set to linear).
 A value of 1.0 is linear, values between 2 and 8 work well."
   :type 'float)
 
 (defcustom scroll-on-jump-mode-line-format nil
   "The `mode-line-format' to use or nil to leave the `mode-line-format' unchanged.
 
-This can be useful to use a simplified or event disabling the mode-line
+This can be useful to use a simplified or even disabling the mode-line
 while scrolling, as a complex mode-line can interfere with smooth scrolling."
-  :type '(choice (const nil) string))
+  :type '(choice (const :tag "Unchanged" nil) sexp))
 
 
 ;; ---------------------------------------------------------------------------
@@ -96,12 +96,13 @@ Move LINES in WINDOW, when ALSO-MOVE-POINT is set, the point is moved too."
                     t))
 
 ;; Per-line Scroll.
-;; return remainder of lines to scroll (matching forward-line).
 (defun scroll-on-jump--scroll-by-lines (window lines also-move-point)
   "Line based scroll that optionally move the point.
 Argument WINDOW The window to scroll.
 Argument LINES The number of lines to scroll (signed).
-Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
+Argument ALSO-MOVE-POINT When non-nil, move the POINT as well.
+
+Return remainder of lines to scroll (matching `forward-line')."
   (declare (important-return-value t))
   (let ((lines-remainder 0))
     (when also-move-point
@@ -120,15 +121,15 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
           (forward-line (- lines-remainder)))))
     lines-remainder))
 
-
 ;; Per-pixel Scroll,
-;; return remainder of lines to scroll (matching forward-line).
 (defun scroll-on-jump--scroll-by-pixels (window char-height delta-px also-move-point)
   "Line based scroll that optionally move the point.
 Argument WINDOW The window to scroll.
 Argument CHAR-HEIGHT The result of `frame-char-height'.
 Argument DELTA-PX The number of pixels to scroll (signed).
-Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
+Argument ALSO-MOVE-POINT When non-nil, move the POINT as well.
+
+Return remainder of lines to scroll (matching `forward-line')."
   (declare (important-return-value nil))
   (cond
    ((< delta-px 0)
@@ -181,12 +182,11 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 
 (defsubst scroll-on-jump--set-mark-from-point ()
   "Convenience function to set the mark to the point."
-  (let ((m (mark-marker)))
-    ;; This should practically never be nil,
-    ;; although it's not impossible the mark is somehow cleared while drawing,
-    ;; in this case, doing nothing is OK.
-    (when m
-      (set-marker m (point)))))
+  ;; This should practically never be nil,
+  ;; although it's not impossible the mark is somehow cleared while drawing,
+  ;; in this case, doing nothing is OK.
+  (when-let* ((m (mark-marker)))
+    (set-marker m (point))))
 
 (defmacro scroll-on-jump--save-mark-conditionally (test-condition &rest body)
   "Run BODY, restoring the marks original location when TEST-CONDITION is non-nil."
@@ -201,16 +201,15 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
                 ,@body)
          ;; Unlikely but possible the mark no longer exists.
          (when ,mk-pos
-           (let ((mk (mark-marker)))
-             (when mk
-               (set-marker mk ,mk-pos))))))))
+           (when-let* ((mk (mark-marker)))
+             (set-marker mk ,mk-pos)))))))
 
 
 ;; ---------------------------------------------------------------------------
 ;; Internal Interpolation Functions
 
 (defsubst scroll-on-jump--interp-linear-impl (a b factor)
-  "Internal macro for to blend A, B by FACTOR."
+  "Blend A toward B by FACTOR."
   (+ a (* (- b a) factor)))
 
 (defun scroll-on-jump--interp-linear (a b factor)
@@ -224,7 +223,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
   (scroll-on-jump--interp-linear-impl a b (expt factor scroll-on-jump-curve-power)))
 
 (defun scroll-on-jump--interp-ease-out (a b factor)
-  "Blend FACTOR between A and B using ease-in curvature."
+  "Blend FACTOR between A and B using ease-out curvature."
   (declare (important-return-value t))
   (scroll-on-jump--interp-linear-impl
    a b (- 1.0 (expt (- 1.0 factor) scroll-on-jump-curve-power))))
@@ -264,7 +263,7 @@ Argument ALSO-MOVE-POINT When non-nil, move the POINT as well."
 ;; ---------------------------------------------------------------------------
 ;; Internal Logic
 
-(defun scroll-on-jump--immediate-scroll (window lines-scroll _dir)
+(defun scroll-on-jump--immediate-scroll (window lines-scroll)
   "Non animated scroll for WINDOW to move LINES-SCROLL."
   (declare (important-return-value nil))
   (scroll-on-jump--scroll-by-lines-simple window lines-scroll nil))
@@ -444,7 +443,7 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
 
 (defun scroll-on-jump--scroll-animated (window lines-scroll dir also-move-point)
   "Perform an animated scroll.
-see `scroll-on-jump--scroll-impl' for doc-strings for WINDOW, LINES-SCROLL, DIR & ALSO-MOVE-POINT."
+See `scroll-on-jump--scroll-impl' for doc-strings for WINDOW, LINES-SCROLL, DIR & ALSO-MOVE-POINT."
   (declare (important-return-value nil))
   (cond
    ;; Use pixel scrolling.
@@ -468,7 +467,7 @@ Moving the point when ALSO-MOVE-POINT is set."
   (cond
    ;; No animation.
    ((zerop scroll-on-jump-duration)
-    (scroll-on-jump--immediate-scroll window lines-scroll dir))
+    (scroll-on-jump--immediate-scroll window lines-scroll))
    ;; Animated scroll.
    (scroll-on-jump-mode-line-format
     (prog1 (let ((mode-line-format scroll-on-jump-mode-line-format))
@@ -581,7 +580,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
                (scroll-on-jump--inner-scoped-mark (window-start window) window-start-prev
                  (scroll-on-jump--inner-scoped-mark point-orig point-next
                    ;; Run the main body of this function.
-                   ;; It's important the result if returned (hence the `prog1' use).
+                   ;; It's important the result is returned (hence the `prog1' use).
                    (funcall body-fn)))))
 
       ;; Quiet unused argument warning.
@@ -643,7 +642,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
 
 ;;;###autoload
 (defun scroll-on-jump-interactive (fn)
-  "Macro that wraps interactive call to function FN.
+  "Function that wraps interactive call to function FN.
 
 Use if you want to use `scroll-on-jump' for a single `key-binding',
 without changing behavior anywhere else."
@@ -684,7 +683,7 @@ This calls (calling OLD-FN with ARGS)."
 
 ;;;###autoload
 (defun scroll-on-jump-with-scroll-interactive (fn)
-  "Macro that wraps interactive call to function FN.
+  "Function that wraps interactive call to function FN.
 
 Use if you want to use `scroll-on-jump-with-scroll' for a single `key-binding',
 without changing behavior anywhere else."
