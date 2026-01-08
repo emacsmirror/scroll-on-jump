@@ -73,7 +73,7 @@ A value of 1.0 is linear, values between 2 and 8 work well."
 (defcustom scroll-on-jump-mode-line-format nil
   "The `mode-line-format' to use or nil to leave the `mode-line-format' unchanged.
 
-This can be useful to use a simplified or even disabling the mode-line
+This can be useful for simplifying or even disabling the mode-line
 while scrolling, as a complex mode-line can interfere with smooth scrolling."
   :type '(choice (const :tag "Unchanged" nil) sexp))
 
@@ -97,7 +97,7 @@ Move LINES in WINDOW, when ALSO-MOVE-POINT is set, the point is moved too."
 
 ;; Per-line Scroll.
 (defun scroll-on-jump--scroll-by-lines (window lines also-move-point)
-  "Line based scroll that optionally move the point.
+  "Line based scroll that optionally moves the point.
 Argument WINDOW The window to scroll.
 Argument LINES The number of lines to scroll (signed).
 Argument ALSO-MOVE-POINT When non-nil, move the POINT as well.
@@ -123,7 +123,7 @@ Return remainder of lines to scroll (matching `forward-line')."
 
 ;; Per-pixel Scroll,
 (defun scroll-on-jump--scroll-by-pixels (window char-height delta-px also-move-point)
-  "Line based scroll that optionally move the point.
+  "Pixel based scroll that optionally moves the point.
 Argument WINDOW The window to scroll.
 Argument CHAR-HEIGHT The result of `frame-char-height'.
 Argument DELTA-PX The number of pixels to scroll (signed).
@@ -274,7 +274,7 @@ Moving the point when ALSO-MOVE-POINT is set."
   (declare (important-return-value nil))
   (let ((time-init (current-time))
         ;; For motion less than a window, scale down the time allowed.
-        ;; This means moving a short distance wont be given the full time.
+        ;; This means moving a short distance won't be given the full time.
         (time-limit
          (* scroll-on-jump-duration
             (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
@@ -348,7 +348,7 @@ Argument ALSO-MOVE-POINT moves the point while scrolling."
   (declare (important-return-value nil))
   (let ((time-init (current-time))
         ;; For motion less than a window, scale down the time allowed.
-        ;; This means moving a short distance wont be given the full time.
+        ;; This means moving a short distance won't be given the full time.
         (time-limit
          (* scroll-on-jump-duration
             (min 1.0 (/ (float (abs lines-scroll)) (float (window-body-height window))))))
@@ -573,7 +573,7 @@ Argument USE-WINDOW-START detects window scrolling when non-nil."
              ;; this has the advantage that we could get the resulting cursor location
              ;; even in the case of an error.
              ;; However - this makes troubleshooting problems considerably more difficult.
-             ;; As it wont show the full back-trace, only the error message.
+             ;; As it won't show the full back-trace, only the error message.
              ;; So don't prioritize correct jumping in the case of errors and assume errors
              ;; are not something that happen after cursor motion.
              (scroll-on-jump--outer-scoped-mark point-orig point-prev

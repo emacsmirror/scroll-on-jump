@@ -31,7 +31,7 @@ Animated Scrolling
    You can optionally jump to the new location in multiple steps (lines/pixels)
    this can help to give context when moving around the document.
 Responsive Animation
-   To avoid animation display slowing you down - any input will cancel the animation
+   To avoid animation slowing you down - any input will cancel the animation
    so multiple key strokes won't lag behind display updates.
 Un-intrusive
    This only exposes functionality you can make use of,
@@ -47,7 +47,7 @@ The following functions are exposed.
    Macro that behaves like ``progn``,
    any code that runs in the body of this macro will perform scrolling when moving the point.
 ``scroll-on-jump-interactive``
-   Use this to wrap interactive function (intended to be used in key bindings).
+   Use this to wrap an interactive function (intended to be used in key bindings).
 ``scroll-on-jump-advice-add``
    Adds advice so scrolling is performed whenever the function is called.
 ``scroll-on-jump-advice-remove``
@@ -63,7 +63,7 @@ Commands that work well include:
 Wrapping Commands That Scroll
 -----------------------------
 
-If a command it's self sets a new scroll location,
+If a command itself sets a new scroll location,
 these can be wrapped using ``scroll-on-jump-with-scroll-`` prefix,
 so ``scroll-on-jump-with-scroll-interactive``, ``scroll-on-jump-with-scroll-advice-add`` .. etc.
 
@@ -75,7 +75,7 @@ Key Binding Example
 
 Take this example of pressing ``Ctrl-Z`` for undo.
 
-Using ``scroll-on-jump-interactive`` makes this use ``scrol-on-jump`` features.
+Using ``scroll-on-jump-interactive`` makes this use ``scroll-on-jump`` features.
 
 Before:
 
@@ -170,8 +170,8 @@ While the defaults seem to work well, these values can be customized.
    Apply a curve to the scroll speed, starting and ending slow.
 
    :'smooth: Ease in/out.
-   :'smooth-in: Ease in (end slow).
-   :'smooth-out: Ease in (start slow).
+   :'smooth-in: Ease in (start slow).
+   :'smooth-out: Ease out (end slow).
    :'linear: Linear motion (no easing).
 ``scroll-on-jump-curve-power``: ``3.0``
    The strength of the curve (when non-linear).
@@ -189,7 +189,7 @@ While the defaults seem to work well, these values can be customized.
 Installation
 ============
 
-Until this is available on melpa, straight can be used to install this package.
+This package is available via melpa. Alternatively, straight can be used to install this package.
 
 .. code-block:: elisp
 
