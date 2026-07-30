@@ -189,20 +189,29 @@ Return remainder of lines to scroll (matching `forward-line')."
     (set-marker m (point))))
 
 (defmacro scroll-on-jump--save-mark-conditionally (test-condition &rest body)
-  "Run BODY, restoring the marks original location when TEST-CONDITION is non-nil."
+  "Run BODY, restoring the marks original state when TEST-CONDITION is non-nil."
   ;; NOTE: it's assumed the buffer will not be modified.
+  ;;
+  ;; NOTE: the active state must be restored as well as the location.
+  ;; BODY re-displays and (on PGTK) calls `sit-for' which runs timers.
+  ;; Emacs protects `deactivate-mark' from timers but *not* `mark-active'.
   (declare (indent 1) (debug t))
   (let ((mk-pos (gensym "mk-pos")))
     `(let ((,mk-pos
             (and ,test-condition
                  (let ((mk (mark-marker)))
                    (and mk (marker-position mk))))))
-       (prog1 (progn
-                ,@body)
+       ;; Use `unwind-protect' so a non-local exit can't leave the mark displaced.
+       (unwind-protect
+           (progn
+             ,@body)
          ;; Unlikely but possible the mark no longer exists.
          (when ,mk-pos
            (when-let* ((mk (mark-marker)))
-             (set-marker mk ,mk-pos)))))))
+             (set-marker mk ,mk-pos))
+           ;; TEST-CONDITION implies an active region, so this only re-activates.
+           ;; Pass `no-tmm' to leave `transient-mark-mode' as the caller set it.
+           (activate-mark t))))))
 
 
 ;; ---------------------------------------------------------------------------

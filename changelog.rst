@@ -3,6 +3,9 @@
 Change Log
 ##########
 
+  - Fix wrapped commands that select text losing their selection
+    when the jump animates.
+
 - Version 0.3 (2025-11-30)
 
   - Fix #28: scroll taking longer than the "duration" especially when scrolling longer distances.
